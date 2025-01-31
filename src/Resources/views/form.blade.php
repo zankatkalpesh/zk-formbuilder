@@ -1,0 +1,1 @@
+<x-formbuilder::form :form="$form"></x-formbuilder::form>

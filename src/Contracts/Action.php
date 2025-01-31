@@ -1,0 +1,92 @@
+<?php
+
+namespace Zk\FormBuilder\Contracts;
+
+interface Action
+{
+    /**
+     * Get Component
+     * 
+     * @return string
+     */
+    public function getComponent(): string;
+
+    /**
+     * Get action text before
+     * 
+     * @return mixed
+     */
+    public function getBefore();
+
+    /**
+     * Get action text after
+     * 
+     * @return mixed
+     */
+    public function getAfter();
+
+    /**
+     * Get config
+     * 
+     * @param string $key optional 
+     * @return mixed
+     */
+    public function getConfig($key = null);
+
+    /**
+     * Get action text
+     * 
+     * @return string
+     */
+    public function getText(): string;
+
+    /**
+     * Get action html tag name
+     * 
+     * @return string
+     */
+    public function getTagName(): string;
+
+    /**
+     * Get action name
+     * 
+     * @return string
+     */
+    public function getName(): string;
+
+    /**
+     * Get action id
+     * 
+     * @return string
+     */
+    public function getId(): string;
+
+    /**
+     * Get action attributes
+     * 
+     * @return array
+     */
+    public function getAttributes(): array;
+
+    /**
+     * Get wrapper
+     *
+     * @return array
+     */
+    public function getWrapper(): array;
+
+    /**
+     * Renders form DOM element
+     *
+     * @param string $view
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function render(string $view = 'formbuilder::action');
+
+    /**
+     * Transforms action to array
+     * 
+     * @return array
+     */
+    public function toArray(): array;
+}

@@ -1,0 +1,25 @@
+{
+    "name": "zk/laravel-formbuilder",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Zankat Kalpesh",
+            "email": "zankatkalpesh@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Zk\\FormBuilder\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Zk\\FormBuilder\\Providers\\FormBuilderServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "minimum-stability": "dev"
+}
