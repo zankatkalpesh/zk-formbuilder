@@ -248,6 +248,13 @@ class Form
 	protected ?array $output = null;
 
 	/**
+	 * Meta data
+	 *
+	 * @var array
+	 */
+	protected $metaData = [];
+
+	/**
 	 * Form constructor
 	 *
 	 * @param WrapperBuilder $wrapperBuilder
@@ -370,6 +377,19 @@ class Form
 	}
 
 	/** 
+	 * Set properties
+	 * 
+	 * @param array $properties
+	 * @return Form
+	 */
+	public function setProperties(array $properties)
+	{
+		$this->properties = array_merge($this->properties, $properties);
+
+		return $this;
+	}
+
+	/** 
 	 * Get config path
 	 * 
 	 * @return string
@@ -377,6 +397,19 @@ class Form
 	public function getConfigPath(): string
 	{
 		return $this->config ?? 'formbuilder';
+	}
+
+	/**
+	 * Set view only
+	 * 
+	 * @param bool $viewOnly
+	 * @return Form
+	 */
+	public function setViewOnly(bool $viewOnly)
+	{
+		$this->viewOnly = $viewOnly;
+
+		return $this;
 	}
 
 	/**
@@ -562,8 +595,22 @@ class Form
 	}
 
 	/**
+	 * Set model
+	 *
+	 * @param Illuminate\Database\Eloquent\Model $model
+	 * @return Form
+	 */
+	public function setModel($model)
+	{
+		$this->model = $model;
+
+		return $this;
+	}
+
+	/**
 	 * Set action
 	 *
+	 * @param string $action
 	 * @return Form
 	 */
 	public function setAction($action)
@@ -911,12 +958,38 @@ class Form
 	}
 
 	/**
+	 * Set meta data
+	 * 
+	 * @param array $metaData
+	 * @return Form
+	 */
+	public function setMetaData(array $metaData)
+	{
+		$this->metaData = array_merge($this->metaData, $metaData);
+
+		return $this;
+	}
+
+	/**
+	 * Get meta data
+	 * 
+	 * @return array
+	 */
+	public function getMetaData(): array
+	{
+		return $this->metaData;
+	}
+
+
+	/**
 	 * Save data
 	 *
 	 * @return mixed
 	 */
-	public function save()
+	public function save($metaData = [])
 	{
+		$this->setMetaData($metaData);
+
 		return (!empty($this->key)) ? $this->update() : $this->insert();
 	}
 

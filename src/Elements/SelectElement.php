@@ -77,7 +77,8 @@ class SelectElement extends Element
         // Check if placeholder is set and add it to the beginning of the options array
         if (isset($this->field['placeholder'])) {
             $placeholder = $this->field['placeholder'];
-            $placeholder = [['value' => '', 'label' => trans($placeholder)]];
+            $label = $this->getLabel() ? $this->getLabel()->getText() : $this->toHumanReadable($this->getKey());
+            $placeholder = [['value' => '', 'label' => trans($placeholder, ['attribute' => $label])]];
             $options = array_merge($placeholder, $options);
         }
 
@@ -146,29 +147,9 @@ class SelectElement extends Element
      */
     public function getName(): string
     {
-        $name = $this->toBracketNotation($this->name);
+        $name = ($this->isMultiselect()) ? $this->getNameKey() . '[]' : $this->getNameKey();
 
-        return ($this->isMultiselect()) ? $name . '[]' : $name;
-    }
-
-    /**
-     * Get the element id
-     * 
-     * @return string
-     */
-    public function getId(): string
-    {
-        $name = $this->toBracketNotation($this->name);
-
-        $id = $this->field['id'] ?? $this->getConfigByKey('id', 'input');
-
-        if (empty($id)) {
-            $id = $name;
-        }
-
-        $id = $this->toBracketNotation($id);
-
-        return str_replace('{name}', $name, $id);
+        return $this->toBracketNotation($name);
     }
 
     /**
@@ -218,7 +199,7 @@ class SelectElement extends Element
     public function isSelected($value): bool
     {
         return (
-            ($value && $this->getData() !== null)  &&
+            ($value !== null && $this->getData() !== null)  &&
             (
                 ($this->isMultiselect() && in_array($value, (array) $this->getData())) ||
                 (!$this->isMultiselect() && $value == $this->getData())

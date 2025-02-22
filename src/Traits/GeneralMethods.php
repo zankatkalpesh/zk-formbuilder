@@ -57,10 +57,15 @@ trait GeneralMethods
 
 	public function toBracketNotation(string $str, string $separator = '.'): string
 	{
+		$suffix = '';
 		if (!str_contains($str, $separator)) return $str; // No $separator, return the original string
+		if (str_ends_with($str, '[]')) {
+			$str = substr($str, 0, -2);
+			$suffix = '[]';
+		}
 		$parts = explode($separator, $str);
 		$firstPart = array_shift($parts);
-		return $firstPart . '[' . implode('][', $parts) . ']';
+		return $firstPart . '[' . implode('][', $parts) . ']' . $suffix;
 	}
 
 	/**

@@ -107,8 +107,6 @@ class FileElement extends Element
     {
         $upload = $this->field['options'] ?? $this->getConfigByKey('options');
 
-        if (empty($upload)) return;
-
         $this->options['delete'] = $upload['delete'] ?? false;
         $this->options['disk'] = $upload['disk'] ?? 'public';
         $this->options['path'] = $upload['path'] ?? 'documents';
@@ -150,39 +148,9 @@ class FileElement extends Element
      */
     public function getName(): string
     {
-        $name = $this->toBracketNotation($this->name);
+        $name = ($this->isMultiple()) ? $this->getNameKey() . '[]' : $this->getNameKey();
 
-        return ($this->isMultiple()) ? $name . '[]' : $name;
-    }
-
-    /**
-     * Get the element id
-     * 
-     * @return string
-     */
-    public function getId(): string
-    {
-        $name = $this->toBracketNotation($this->name);
-
-        $id = $this->field['id'] ?? $this->getConfigByKey('id', 'input');
-
-        if (empty($id)) {
-            $id = $name;
-        }
-
-        $id = $this->toBracketNotation($id);
-
-        return str_replace('{name}', $name, $id);
-    }
-
-    /**
-     * Get the element default value
-     * 
-     * @return any
-     */
-    public function getValue()
-    {
-        return '';
+        return $this->toBracketNotation($name);
     }
 
     /**
@@ -203,6 +171,18 @@ class FileElement extends Element
         }
 
         return $attributes;
+    }
+
+    /**
+     * Convert Element rule to validation format
+     * 
+     * @param string $side
+     * @return array
+     */
+    public function toValidationRules(string $side = 'backend'): array
+    {
+        $ruleKey = ($this->isMultiple()) ? $this->getNameKey() . '*' : $this->getNameKey();
+        return [$ruleKey => $this->getRules($side)];
     }
 
     /**
@@ -329,11 +309,12 @@ class FileElement extends Element
      */
     public function fill($entity, $data, $emptyOnNull = true)
     {
-        if (!$this->isPersist()) {
+        if (!$this->isPersist() || $this->hasViewOnly()) {
             return;
         }
-        if (Arr::has($this->data, $this->getNameKey())) {
-            $files = Arr::get($this->data, $this->getNameKey());
+
+        if (Arr::has($data, $this->getNameKey())) {
+            $files = Arr::get($data, $this->getNameKey());
             // Check if custom upload function
             if (!empty($this->uploadFunc)) {
                 $upload = $this->uploadFunc;
@@ -373,7 +354,7 @@ class FileElement extends Element
      */
     public function getFiles()
     {
-        $files = $this->getData();
+        $files = $this->getValue();
 
         // Check if custom display function
         if (!empty($this->displayFunc)) {
@@ -406,7 +387,6 @@ class FileElement extends Element
         $arr = parent::toArray($side);
 
         $arr['multiple'] = $this->isMultiple();
-        $arr['data'] = $this->getData();
         $arr['files'] = $this->getFiles();
 
         return $arr;

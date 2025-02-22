@@ -126,6 +126,10 @@ class GroupElement extends Element
     {
         $modifyData = $data;
 
+        if ($this->modifyData && is_callable($this->modifyData)) {
+            $modifyData = call_user_func($this->modifyData, $modifyData, $this);
+        }
+
         foreach ($this->getFields() as $field) {
             $modifyData = $field->modifyData($modifyData);
         }
@@ -305,7 +309,7 @@ class GroupElement extends Element
      */
     public function fill($entity, $data, $emptyOnNull = true)
     {
-        if (!$this->isPersist()) {
+        if (!$this->isPersist() || $this->hasViewOnly()) {
             return;
         }
 

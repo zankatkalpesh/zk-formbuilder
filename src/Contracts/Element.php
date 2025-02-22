@@ -30,6 +30,14 @@ interface Element
     public function getJsElement(): string;
 
     /**
+     * Get property
+     * 
+     * @param string $key
+     * @return mixed
+     */
+    public function getProperty(string $key);
+
+    /**
      * Get properties
      * 
      * @return array

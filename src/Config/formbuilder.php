@@ -8,18 +8,15 @@ return [
     //
     'form' => [
         // 'prefix' => '{name}',
-        'class' => 'form-{name}',
+        'class' => 'form-{name} row',
         'method' => 'POST',
         'action' => '',
-        'wrapper' => [
-            'class' => 'container'
-        ],
+        'wrapper' => [],
         'buttons' => [
             'wrapper' => [
                 'tag' => 'div',
-                'class' => 'mb-3 d-flex justify-content-end',
+                'class' => 'my-3 d-flex justify-content-end',
             ],
-            // 'actionConfig' => [],
             'actions' => [
                 'submit' => [
                     'tag' => 'button',
@@ -35,8 +32,7 @@ return [
     //
     'field' => [
         'wrapper' => [
-            'tag' => 'div',
-            'class' => 'form-group mb-3 {errorClass}',
+            'class' => 'mb-2 col-md-4 {errorClass}',
             'errorClass' => 'has-error',
         ],
         'label' => [
@@ -47,7 +43,7 @@ return [
             'errorClass' => 'is-invalid',
         ],
         'attributes' => [
-            'placeholder' => 'Enter your {label}',
+            'placeholder' => 'form.input.placeholder',
         ],
         'error' => [
             'class' => 'invalid-feedback',
@@ -74,12 +70,15 @@ return [
         ],
         'checkboxgroup' => [
             'wrapper' => [
-                'class' => 'mb-3',
-            ]
+                'class' => 'col-md-4',
+            ],
+            'itemWrapper' => [
+                'class' => 'form-check',
+            ],
         ],
         'radiogroup' => [
             'wrapper' => [
-                'class' => 'mb-3',
+                'class' => 'col-md-4',
             ]
         ],
         'checkbox' => [
@@ -100,13 +99,14 @@ return [
         'group' => [
             'wrapper' => [
                 'tag' => 'div',
-                'class' => 'form-group mb-3 group-{name}',
+                'class' => 'col-md-12 mb-3 card d-block form-group group-{name}',
             ],
             'fieldWrapper' => [
                 'tag' => 'div',
-                'class' => 'form-group-fields'
+                'class' => 'form-group-fields row px-2'
             ],
             'label' => [
+                'class' => 'fs-5 mt-2 border-bottom border-secondary form-label form-group-label',
                 'attributes' => [
                     'for' => false
                 ]
@@ -114,32 +114,45 @@ return [
         ],
         'multiple' => [
             'label' => [
+                'class' => 'fs-5 mt-2 border-bottom border-secondary form-label form-multiple-label',
                 'attributes' => [
                     'for' => false
                 ]
             ],
             'wrapper' => [
-                'tag' => 'div',
-                'class' => 'form-multiple multiple-{name}',
+                'class' => 'col-md-12 mb-3 card d-block form-multiple multiple-{name}',
                 'attributes' => [
-                    'data-prefix' => '{prefix}',
+                    // 'data-prefix' => '{prefix}',
                     'data-min-row' => '{minRow}',
                     'data-max-row' => '{maxRow}',
                 ],
             ],
+            'contentWrapper' => [
+                'class' => 'form-multiple-content-{name}',
+                'attributes' => [
+                    'data-prefix' => '{prefix}',
+                ],
+            ],
             'rowWrapper' => [
                 'tag' => 'div',
-                'class' => 'form-multiple-row',
+                'class' => 'mb-3 form-multiple-row row',
                 'attributes' => [
                     'data-row-prefix' => '{rowPrefix}',
                 ],
             ],
+            'fieldWrapper' => [
+                'tag' => [
+                    'class' => 'form-multiple-fields col-md-11',
+                    'tag' => [
+                        'class' => 'row',
+                    ]
+                ]
+            ],
             'action' => [
                 'add' => [
                     'position' => 'before',
-                    'tag' => 'button',
                     'attributes' => [
-                        'class' => 'btn btn-primary btn-sm',
+                        'class' => 'btn btn-primary btn-md ms-2',
                         'type' => 'button',
                         'data-add-prefix' => '{prefix}',
                         'data-action' => 'add-row',
@@ -148,15 +161,17 @@ return [
                 ],
                 'remove' => [
                     'position' => 'after',
-                    'tag' => 'button',
                     'attributes' => [
-                        'class' => 'btn btn-danger btn-sm',
+                        'class' => 'btn btn-danger btn-md',
                         'type' => 'button',
                         'data-action' => 'remove-row',
                         'data-row-key' => '{rowKey}',
                         'data-remove-prefix' => '{rowPrefix}',
                     ],
-                    'label' => 'Remove',
+                    'label' => '<i class="fas fa-trash"></i>',
+                    'wrapper' => [
+                        'class' => 'form-multiple-remove col-md-1 text-md-center',
+                    ]
                 ]
             ]
         ],

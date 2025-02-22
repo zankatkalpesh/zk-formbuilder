@@ -269,6 +269,10 @@ class TabElement extends Element
     {
         $modifyData = $data;
 
+        if ($this->modifyData && is_callable($this->modifyData)) {
+            $modifyData = call_user_func($this->modifyData, $modifyData, $this);
+        }
+
         foreach ($this->tabs as $tab) {
             foreach ($tab['fields'] as $field) {
                 $modifyData = $field->modifyData($modifyData);
@@ -480,7 +484,7 @@ class TabElement extends Element
      */
     public function fill($entity, $data, $emptyOnNull = true)
     {
-        if (!$this->isPersist()) {
+        if (!$this->isPersist() || $this->hasViewOnly()) {
             return;
         }
 

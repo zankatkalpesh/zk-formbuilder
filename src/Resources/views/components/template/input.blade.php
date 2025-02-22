@@ -13,18 +13,22 @@
 {!! $element->getBefore() !!}
 
 @if($element->hasViewOnly())
-    @if($element->getType() === 'checkbox' || $element->getType() === 'radio')
-        <input
-            type="{{ $element->getType() }}"
-            {!! $element->printAttributes() !!}
-            readonly="readonly"
-            disabled="disabled"
-            data-view-only="true"
-        />
+    @if($element->hasView()) 
+        {!! $element->getView() !!}
     @else
-        <div class="frm-view-only type-{{ $element->getType() }}">
-            {{ $element->getValue() }}
-        </div>
+        @if($element->getType() === 'checkbox' || $element->getType() === 'radio')
+            <input
+                type="{{ $element->getType() }}"
+                {!! $element->printAttributes() !!}
+                readonly="readonly"
+                disabled="disabled"
+                data-view-only="true"
+            />
+        @else
+            <div class="form-control frm-view-only type-{{ $element->getType() }}" data-view-only="true">
+                {{ $element->getValue() }}
+            </div>
+        @endif
     @endif
 @else
     @if($element->getType() === 'textarea')
@@ -39,7 +43,7 @@
             {!! $element->printAttributes() !!}
             @if ($rules) data-rules="{{ json_encode($rules) }}" @endif
             @if ($messages) data-messages="{{ json_encode($messages) }}" @endif
-            @if ($element->getValue()) value="{{ $element->getValue() }}" @endif
+            @if ($element->getValue() !== null) value="{{ $element->getValue() }}" @endif
             />
     @endif
 @endif

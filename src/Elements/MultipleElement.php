@@ -262,16 +262,10 @@ class MultipleElement extends Element
         $replaceData['{rowKey}'] = $row['name'];
         $replaceData['{rowPrefix}'] = $row['rowPrefix'];
 
-        // Wrapper Builder
+        // Row Wrapper Builder
         $wBuilder = clone $this->wrapperBuilder;
         $wBuilder->replace($replaceData);
-
-        $wrapper = $row[$key] ?? [];
-
-        if (empty($wrapper)) {
-            $wrapper = $this->getConfigByKey($key) ?? [];
-        }
-
+        $wrapper = $this->getConfigByKey($key) ?? [];
         // Add Error class to element
         $errorClass = $wrapper['errorClass'] ?? '';
         $errorClass = str_replace(array_keys($replaceData), array_values($replaceData), $errorClass);
@@ -279,12 +273,29 @@ class MultipleElement extends Element
         if (isset($row['invalid']) && $row['invalid']) {
             $wBuilder->replace('{errorClass}', $errorClass);
         }
+        $rowWrapper = $wBuilder->set($wrapper)->build();
 
-        $rowWrapper = $wBuilder
-            ->set($wrapper)
-            ->build();
+        // Field Wrapper Builder
+        $fwBuilder = clone $this->wrapperBuilder;
+        $fwBuilder->replace($replaceData);
+        $fwrapper = $this->getConfigByKey('fieldWrapper') ?? [];
+        // Add Error class to element
+        $fErrorClass = $fwrapper['errorClass'] ?? '';
+        $fErrorClass = str_replace(array_keys($replaceData), array_values($replaceData), $fErrorClass);
+        $fwBuilder->replace('{errorClass}', '');
+        if (isset($row['invalid']) && $row['invalid']) {
+            $fwBuilder->replace('{errorClass}', $fErrorClass);
+        }
+        $fieldWrapper = $fwBuilder->set($fwrapper)->build();
 
-        return ['wrapper' => $rowWrapper, 'errorClass' => $errorClass];
+        return [
+            'wrapper' => $rowWrapper,
+            'errorClass' => $errorClass,
+            'fieldWrapper' => [
+                'wrapper' => $fieldWrapper,
+                'errorClass' => $fErrorClass
+            ]
+        ];
     }
 
     public function getRowRemoveAction($row)
@@ -358,6 +369,10 @@ class MultipleElement extends Element
     public function modifyData($data): mixed
     {
         $modifyData = $data;
+
+        if ($this->modifyData && is_callable($this->modifyData)) {
+            $modifyData = call_user_func($this->modifyData, $modifyData, $this);
+        }
 
         if ($modifyData !== null && Arr::has($modifyData, $this->getNameKey())) {
             // Add new row based on data length
@@ -590,7 +605,7 @@ class MultipleElement extends Element
      */
     public function fill($entity, $data, $emptyOnNull = true)
     {
-        if (!$this->isPersist()) {
+        if (!$this->isPersist() || $this->hasViewOnly()) {
             return;
         }
         // Fill fields
@@ -675,6 +690,7 @@ class MultipleElement extends Element
             'before' => $this->getBefore(),
             'after' => $this->getAfter(),
             'wrapper' => $this->getWrapper(),
+            'contentWrapper' => $this->getWrapper('contentWrapper'),
             'attributes' => $this->getAttributes(),
             // 'value' => $this->getValue(),
             'rowObject' => $this->getNewRowObject($side),

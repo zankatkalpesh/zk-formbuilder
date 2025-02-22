@@ -208,6 +208,8 @@ class Label implements LabelContract
             $text = $this->element->getKey();
         }
 
+        $text = trans($text);
+
         return $this->toHumanReadable($text);
     }
 

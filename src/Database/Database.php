@@ -142,6 +142,7 @@ class Database implements DatabaseContract
         $this->db::transaction(function () use ($data) {
             $this->create();
             $this->fill($data);
+            $this->fillMetaData();
             $this->save();
         });
 
@@ -161,6 +162,7 @@ class Database implements DatabaseContract
         $this->db::transaction(function () use ($data, $key, $emptyOnNull) {
             $this->find($key);
             $this->fill($data, $emptyOnNull);
+            $this->fillMetaData($emptyOnNull);
             $this->save();
         });
 
@@ -179,6 +181,18 @@ class Database implements DatabaseContract
         foreach ($this->form->getFields() as $element) {
             $element->fill($this->entity, $data, $emptyOnNull);
         }
+    }
+
+    /**
+     * Fill meta data
+     *
+     * @param bool $emptyOnNull
+     * @return void
+     */
+    private function fillMetaData($emptyOnNull = true)
+    {
+        $metaData = $this->form->getMetaData();
+        $this->entity->fill($metaData, $emptyOnNull);
     }
 
     /**

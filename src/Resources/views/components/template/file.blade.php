@@ -12,25 +12,25 @@
 
 {!! $element->getBefore() !!}
 @if($element->hasViewOnly())
-    <div class="frm-view-only type-{{ $element->getType() }}">
-        <ul class="list-unstyled">
-        @foreach($element->getFiles() as $file)
-            @php
-                $fileName = basename($file);
-            @endphp
-            <li class="file-item">
-                <a href="{{ $file }}" target="_blank">{{ $fileName }}</a>
-            </li>
-        @endforeach
-        </ul>
-    </div>
+    @if($element->hasView()) 
+        {!! $element->getView() !!}
+    @else
+        <div class="frm-view-only type-{{ $element->getType() }}" data-view-only="true">
+            <ul class="list-unstyled">
+                @foreach($element->getFiles() as $file)
+                    <li class="file-item">
+                        <a href="{{ $file }}" target="_blank">{{ basename($file) }}</a>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 @else
     <input
         type="{{ $element->getType() }}"
         {!! $element->printAttributes() !!}
         @if ($rules) data-rules="{{ json_encode($rules) }}" @endif
-        @if ($messages) data-messages="{{ json_encode($messages) }}" @endif
-        @if ($element->getValue()) value="{{ $element->getValue() }}" @endif/>
+        @if ($messages) data-messages="{{ json_encode($messages) }}" @endif/>
 @endif
 {!! $element->getAfter() !!}
 

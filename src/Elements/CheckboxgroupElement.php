@@ -146,6 +146,7 @@ class CheckboxgroupElement extends Element
             'before' => $this->getBefore(),
             'after' => $this->getAfter(),
             'wrapper' => $this->getWrapper(),
+            'itemWrapper' => $this->getWrapper('itemWrapper'),
             'attributes' => $this->getAttributes(),
             'value' => $this->getValue(),
             'items' => $this->getItemsToArray($side),

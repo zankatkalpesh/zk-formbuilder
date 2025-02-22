@@ -68,6 +68,20 @@ class Element implements ElementContract
     public $viewOnly = false;
 
     /**
+     * Element modify value
+     * 
+     * @var mixed
+     */
+    public $modifyValue;
+
+    /** 
+     * Element modify data
+     * 
+     * @var mixed
+     */
+    public $modifyData;
+
+    /**
      * Whether should persist in db
      *
      * @var bool
@@ -168,7 +182,9 @@ class Element implements ElementContract
         $this->messages = $this->field['messages'] ?? $this->messages;
         $this->persist = $this->field['persist'] ?? $this->persist;
         $this->attributes = $this->getConfigByKey('attributes') ?? [];
-        $this->viewOnly = $this->getConfigByKey('viewOnly') ?? $this->parent->hasViewOnly();
+        $this->viewOnly = $this->getConfigByKey('viewOnly') != null ? $this->getConfigByKey('viewOnly') : $this->parent->hasViewOnly();
+        $this->modifyValue = $this->getConfigByKey('modifyValue') ?? null;
+        $this->modifyData = $this->getConfigByKey('modifyData') ?? null;
 
         $rules = $this->field['rules'] ?? $this->rules;
         if (is_callable($rules)) {
@@ -205,6 +221,17 @@ class Element implements ElementContract
     public function getJsElement(): string
     {
         return $this->getConfigByKey('jsElement') ?? $this->jsElement;
+    }
+
+    /**
+     * Get property
+     * 
+     * @param string $key
+     * @return mixed
+     */
+    public function getProperty(string $key)
+    {
+        return Arr::get($this->properties, $key);
     }
 
     /**
@@ -266,6 +293,32 @@ class Element implements ElementContract
     }
 
     /**
+     * Element has view format
+     * 
+     * @return bool
+     */
+    public function hasView(): bool
+    {
+        return ($this->getConfigByKey('view')) ? true : false;
+    }
+
+    /**
+     * Get element view format
+     * 
+     * @return mixed
+     */
+    public function getView()
+    {
+        $after = $this->getConfigByKey('view') ?? '';
+
+        if (is_callable($after)) {
+            $after = call_user_func($after, $this);
+        }
+
+        return $after;
+    }
+
+    /**
      * Get element`s attributes
      * 
      * @return array
@@ -282,12 +335,13 @@ class Element implements ElementContract
         $attributes = array_merge($this->attributes, $attributes);
 
         if ($attributes['placeholder'] ?? false) {
-            $attributes['placeholder'] = trans($attributes['placeholder']);
+            $label = $this->getLabel() ? $this->getLabel()->getText() : $this->toHumanReadable($this->getKey());
+            $attributes['placeholder'] = trans($attributes['placeholder'], ['attribute' => $label]);
         }
 
         $replaceData = $this->getReplaceData();
 
-        // Add Error class to element
+        // Add error class to element
         $replaceData['{errorClass}'] = '';
         if ($this->isInvalid()) {
             $errorClass = $this->getConfigByKey('errorClass', 'input') ?? '';
@@ -315,7 +369,12 @@ class Element implements ElementContract
      */
     public function getNameKey(): string
     {
-        return $this->name;
+        $nameKey = $this->name;
+        if (str_ends_with($nameKey, '[]')) {
+            $nameKey = substr($nameKey, 0, -2);
+        }
+
+        return $nameKey;
     }
 
     /**
@@ -335,7 +394,7 @@ class Element implements ElementContract
      */
     public function getKey(): string
     {
-        $key = $this->name;
+        $key = $this->getNameKey();
 
         if (strpos($key, ".") !== false) {
             $keyArr = explode('.', $key);
@@ -359,11 +418,11 @@ class Element implements ElementContract
         }
 
         if (empty($column)) {
-            return $this->name;
+            return $this->getNameKey();
         }
 
         // Replace with column name if column name is set
-        $key = $this->name;
+        $key = $this->getNameKey();
 
         if (strpos($key, ".") !== false) {
             $keyArr = explode('.', $key);
@@ -397,7 +456,7 @@ class Element implements ElementContract
      */
     public function getId(): string
     {
-        $name = $this->getName();
+        $name = $this->getNameKey();
 
         $id = $this->field['id'] ?? $this->getConfigByKey('id', 'input');
 
@@ -452,6 +511,10 @@ class Element implements ElementContract
      */
     public function modifyData($data): mixed
     {
+        if ($this->modifyData && is_callable($this->modifyData)) {
+            $data = call_user_func($this->modifyData, $data, $this);
+        }
+
         return $data;
     }
 
@@ -490,11 +553,13 @@ class Element implements ElementContract
      */
     public function getValue()
     {
-        if ($this->getData() !== null) {
-            return $this->getData();
+        $value = ($this->getData() !== null) ? $this->getData() : ($this->field['value'] ?? '');
+
+        if ($this->modifyValue && is_callable($this->modifyValue)) {
+            $value = call_user_func($this->modifyValue, $value, $this);
         }
 
-        return $this->field['value'] ?? '';
+        return $value;
     }
 
     /**
@@ -590,6 +655,16 @@ class Element implements ElementContract
         }
 
         return is_array($rules) && array_key_exists($key, $rules);
+    }
+
+    /** 
+     * Get parent element
+     * 
+     * @return Element|null
+     */
+    public function getParent()
+    {
+        return $this->parent instanceof Element ? $this->parent : null;
     }
 
     /** 
@@ -804,12 +879,12 @@ class Element implements ElementContract
      */
     public function fill($entity, $data, $emptyOnNull = true)
     {
-        if (!$this->isPersist()) {
+        if (!$this->isPersist() || $this->hasViewOnly()) {
             return;
         }
 
-        if (Arr::has($this->data, $this->getNameKey())) {
-            $elData = Arr::get($this->data, $this->getNameKey());
+        if (Arr::has($data, $this->getNameKey())) {
+            $elData = Arr::get($data, $this->getNameKey());
             // Format data to save as per column type
             if ($this->getColumnType() === 'json' && !empty($elData)) {
                 $elData = json_encode($elData);
@@ -1035,6 +1110,7 @@ class Element implements ElementContract
             'jsElement' => $this->getJsElement(),
             'elementType' => $this->getElementType(),
             'viewOnly' => $this->hasViewOnly(),
+            'view' => $this->hasView() ? $this->getView() : false,
         ];
     }
 }

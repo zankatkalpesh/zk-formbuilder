@@ -134,10 +134,13 @@ export class ZkElement {
         // Before Input
         wrapper.appendChild(this.formBuilder.stringToHTML(this.field.before || ''));
         let elm = '';
-        if (this.viewOnly && !['checkbox', 'radio'].includes(this.field.type)) {
+        if (this.viewOnly && this.field.view) {
+            elm = this.formBuilder.stringToHTML(this.field.view);
+        } else if (this.viewOnly && !['checkbox', 'radio'].includes(this.field.type)) {
             elm = document.createElement('div');
-            elm.setAttribute('class', `frm-view-only type-${this.field.type}`);
+            elm.setAttribute('data-view-only', 'true');
             if (this.field.type === 'file') {
+                elm.setAttribute('class', `frm-view-only type-${this.field.type}`);
                 const ulElm = document.createElement('ul');
                 ulElm.setAttribute('class', 'file-list list-unstyled');
                 for (let file of this.field.files) {
@@ -153,6 +156,7 @@ export class ZkElement {
                 }
                 elm.append(ulElm);
             } else {
+                elm.setAttribute('class', `form-control frm-view-only type-${this.field.type}`);
                 elm.append(this.field.value);
             }
         } else {
@@ -190,7 +194,7 @@ export class ZkElement {
             elm.setAttribute('data-messages', JSON.stringify(this.field.messages));
         }
 
-        if (this.field.value) {
+        if (this.field.value !== null) {
             if (this.field.type === 'textarea') {
                 elm.innerHTML = this.field.value;
             } else if (this.field.type !== 'file') {
@@ -252,30 +256,36 @@ export class ZkSelectElement extends ZkElement {
     }
 
     createViewOnlyElement(context) {
-        const elm = document.createElement('div');
-        elm.setAttribute('class', `frm-view-only type-${this.field.type}`);
-        const ulElm = document.createElement('ul');
-        ulElm.setAttribute('class', 'list-unstyled');
-        // Options
-        if (this.field.options) {
-            for (let option of this.field.options) {
-                if (option.optgroup) {
-                    for (let opt of option.options) {
-                        if (this.isSelected(opt.value)) {
-                            const optElm = document.createElement('li');
-                            optElm.append(opt.label);
-                            ulElm.appendChild(optElm);
+        if (this.field.view) {
+            const elm = this.formBuilder.stringToHTML(this.field.view);
+            context.appendChild(elm);
+        } else {
+            const elm = document.createElement('div');
+            elm.setAttribute('class', `frm-view-only type-${this.field.type}`);
+            elm.setAttribute('data-view-only', 'true');
+            const ulElm = document.createElement('ul');
+            ulElm.setAttribute('class', 'list-unstyled');
+            // Options
+            if (this.field.options) {
+                for (let option of this.field.options) {
+                    if (option.optgroup) {
+                        for (let opt of option.options) {
+                            if (this.isSelected(opt.value)) {
+                                const optElm = document.createElement('li');
+                                optElm.append(opt.label);
+                                ulElm.appendChild(optElm);
+                            }
                         }
+                    } else if (this.isSelected(option.value)) {
+                        const optElm = document.createElement('li');
+                        optElm.append(option.label);
+                        ulElm.appendChild(optElm);
                     }
-                } else if (this.isSelected(option.value)) {
-                    const optElm = document.createElement('li');
-                    optElm.append(option.label);
-                    ulElm.appendChild(optElm);
                 }
             }
+            elm.append(ulElm);
+            context.appendChild(elm);
         }
-        elm.append(ulElm);
-        context.appendChild(elm);
     }
 
     createSelectElement(context) {
@@ -332,7 +342,7 @@ export class ZkSelectElement extends ZkElement {
 
     isSelected(value) {
         return (
-            (value && this.field.value) && (
+            (value !== null && this.field.value !== null) && (
                 (this.isMultiselect() && this.field.value.includes(value)) ||
                 (!this.isMultiselect() && this.field.value == value)
             )
@@ -379,11 +389,14 @@ export class ZkItemgroupElement extends ZkElement {
         // Before Itemgroup
         context.appendChild(this.formBuilder.stringToHTML(this.field.before || ''));
 
+        // Start Item Wrapper
+        const wrapper = this.formBuilder.createWrapperElement(this.field.itemWrapper || [], context);
+
         // Group Elements
         for (let item of this.field.items) {
             const element = this.formBuilder.createElementInstance(item);
             const content = element.render();
-            if (content) context.appendChild(content);
+            if (content) wrapper.appendChild(content);
         }
 
         // After Itemgroup
@@ -428,9 +441,12 @@ export class ZkMultipleElement extends ZkElement {
         // Before Multiple
         context.appendChild(this.formBuilder.stringToHTML(this.field.before || ''));
 
+        // Content Wrapper
+        const contentWrapper = this.formBuilder.createWrapperElement(this.field.contentWrapper || [], context);
+
         // Multiple Rows
         for (let row of (this.field.rows || [])) {
-            this.buildRow(context, row);
+            this.buildRow(contentWrapper, row);
         }
 
         // After Multiple
@@ -446,12 +462,16 @@ export class ZkMultipleElement extends ZkElement {
         // Action - before
         this.formBuilder.renderElementInPosition(wrapper, removeAction, 'before');
 
+        // Start Field Wrapper
+        const fieldWrapper = row.wrapper.fieldWrapper || [];
+        const fwrapper = this.formBuilder.createWrapperElement(fieldWrapper.wrapper || [], wrapper);
+
         // Row Elements
         for (let field of row.fields) {
             // Create Element
             const element = this.formBuilder.createElementInstance(field);
             const content = element.render();
-            if (content) wrapper.appendChild(content);
+            if (content) fwrapper.appendChild(content);
         }
 
         // Action - after
@@ -489,7 +509,7 @@ export class ZkMultipleActionElement {
             elm.setAttribute('data-row-object', JSON.stringify(this.action.rowObject));
         }
         // Action Text
-        elm.appendChild(document.createTextNode(this.action.label));
+        elm.appendChild(this.formBuilder.stringToHTML(this.action.label || ''));
 
         // Append Action to Context
         wrapper.appendChild(elm);
@@ -898,12 +918,13 @@ export default class ZkFormBuilder {
                 const rowName = _rowObject.name;
                 const rowPrefix = _rowObject.rowPrefix || this.toBracketNotation(rowName);
                 const uniqueId = this.generateRandomString();
+                const timeStr = new Date().getTime();
 
                 // Replace placeholders with unique IDs
                 let rowData = JSON.stringify(_rowObject);
                 rowData = rowData.replaceAll(rowName, rowName.replaceAll('{{index}}', `{{${uniqueId}}}`));
                 rowData = rowData.replaceAll(rowPrefix, rowPrefix.replaceAll('{{index}}', `{{${uniqueId}}}`));
-                rowData = rowData.replaceAll(`{{${uniqueId}}}`, new Date().getTime());
+                rowData = rowData.replaceAll(`{{${uniqueId}}}`, timeStr);
 
                 // Create and append the new row context
                 const rowContext = element.buildRow(document.createDocumentFragment(), JSON.parse(rowData));
@@ -921,6 +942,7 @@ export default class ZkFormBuilder {
                 if (this.validator && this.validator.addContextFields) {
                     this.validator.addContextFields(rowContext);
                 }
+                this.dispatch('addRow', { _container: _container, context: rowContext, rowName, rowPrefix, uniqueId, timeStr });
             }
         }, 150);
 
@@ -936,8 +958,8 @@ export default class ZkFormBuilder {
             event.preventDefault();
             const context = this.form.querySelector(`[data-row-prefix="${_container}"]`);
             if (!context) return;
-            this.dispatch('removeRow', { _container: _container, context: context });
             this.validator.removeContextFields(context);
+            this.dispatch('removeRow', { _container: _container, context: context });
             context.remove();
         }, 100);
 

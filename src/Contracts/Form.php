@@ -33,6 +33,14 @@ interface Form
      */
     public function getProperties(): array;
 
+    /**
+     * Set properties
+     * 
+     * @param array $properties
+     * @return Form
+     */
+    // public function setProperties($properties);
+
     /** 
      * Get config path
      * 
@@ -97,8 +105,17 @@ interface Form
     public function getMethod(): string;
 
     /**
+     * Set model
+     *
+     * @param Illuminate\Database\Eloquent\Model $model
+     * @return Form
+     */
+    public function setModel($model);
+
+    /**
      * Set action
      *
+     * @param string $action
      * @return Form
      */
     public function setAction($action);

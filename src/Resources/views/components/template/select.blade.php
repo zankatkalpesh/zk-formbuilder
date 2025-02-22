@@ -14,23 +14,27 @@
 {!! $element->getBefore() !!}
 
 @if($element->hasViewOnly())
-    <div class="frm-view-only type-{{ $element->getType() }}">
-        <ul class="list-unstyled">
-        @foreach($options as $option)
-            @if(isset($option['optgroup']) && $option['optgroup'])
-                @foreach($option['options'] as $gpOption)
-                    @if($element->isSelected($gpOption['value']))
-                        <li>{{ $gpOption['label'] }}</li>
-                    @endif
-                @endforeach
-                @continue
-            @endif
-            @if($element->isSelected($option['value']))
-                <li>{{ $option['label'] }}</li>
-            @endif
-        @endforeach
-        </ul>
-    </div>
+    @if($element->hasView()) 
+        {!! $element->getView() !!}
+    @else
+        <div class="frm-view-only type-{{ $element->getType() }}" data-view-only="true">
+            <ul class="list-unstyled">
+            @foreach($options as $option)
+                @if(isset($option['optgroup']) && $option['optgroup'])
+                    @foreach($option['options'] as $gpOption)
+                        @if($element->isSelected($gpOption['value']))
+                            <li>{{ $gpOption['label'] }}</li>
+                        @endif
+                    @endforeach
+                    @continue
+                @endif
+                @if($element->isSelected($option['value']))
+                    <li>{{ $option['label'] }}</li>
+                @endif
+            @endforeach
+            </ul>
+        </div>
+    @endif
 @else
     <select
         {!! $element->printAttributes() !!}
