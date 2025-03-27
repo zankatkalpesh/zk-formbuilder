@@ -195,9 +195,10 @@ interface Form
     /**
      * Get form data
      * 
-     * @return array
+     * @param string|null $key
+     * @return mixed
      */
-    public function getData(): array;
+    public function getData($key = null): mixed;
 
     /**
      * Get Validator

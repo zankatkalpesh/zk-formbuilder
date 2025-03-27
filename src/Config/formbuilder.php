@@ -18,13 +18,21 @@ return [
                 'class' => 'my-3 d-flex justify-content-end',
             ],
             'actions' => [
-                'submit' => [
+                'frm-submit' => [
                     'tag' => 'button',
                     'class' => 'btn btn-primary',
                     'attributes' => [
                         'type' => 'submit',
                     ],
                     'label' => 'Submit',
+                ],
+                'frm-reset' => [
+                    'tag' => 'button',
+                    'class' => 'btn btn-secondary',
+                    'attributes' => [
+                        'type' => 'reset',
+                    ],
+                    'label' => 'Reset',
                 ]
             ]
         ],
@@ -72,14 +80,11 @@ return [
             'wrapper' => [
                 'class' => 'col-md-4',
             ],
-            'itemWrapper' => [
-                'class' => 'form-check',
-            ],
         ],
         'radiogroup' => [
             'wrapper' => [
                 'class' => 'col-md-4',
-            ]
+            ],
         ],
         'checkbox' => [
             'wrapper' => [

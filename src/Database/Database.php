@@ -157,7 +157,7 @@ class Database implements DatabaseContract
      * @param bool $emptyOnNull
      * @return Illuminate\Database\Eloquent\Model
      */
-    public function update($data, $key, $emptyOnNull = true)
+    public function update($data, $key, $emptyOnNull = false)
     {
         $this->db::transaction(function () use ($data, $key, $emptyOnNull) {
             $this->find($key);

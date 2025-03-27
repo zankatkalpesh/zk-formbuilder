@@ -421,6 +421,8 @@ class MultipleElement extends Element
      */
     public function hasRules(string $side = 'backend'): bool
     {
+        $this->initRules();
+
         foreach ($this->rows as $row) {
             foreach ($row['fields'] as $field) {
                 if ($field->hasRules($side)) {
@@ -701,6 +703,7 @@ class MultipleElement extends Element
             'elementType' => $this->getElementType(),
             'addAction' => $this->getAddAction(),
             'viewOnly' => $this->hasViewOnly(),
+            'properties' => $this->getProperties(),
         ];
     }
 }

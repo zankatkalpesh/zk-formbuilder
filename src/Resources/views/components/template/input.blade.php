@@ -1,56 +1,43 @@
-@php
-    unset($attributes['element']);
-    $inputWrapper = $element->getWrapper('inputWrapper');
-    $rules = $element->getRules('frontend');
-    $messages = $element->getMessages();
-@endphp
+@props(['element'])
 
-@foreach($inputWrapper as $wrap)
+@foreach($element['inputWrapper'] as $wrap)
     {!! $wrap['before'] ?? '' !!}
     <{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
 @endforeach
 
-{!! $element->getBefore() !!}
+{!! $element['before'] !!}
 
-@if($element->hasViewOnly())
-    @if($element->hasView()) 
-        {!! $element->getView() !!}
+@if($element['viewOnly'])
+    @if($element['view']) 
+        {!! $element['view'] !!}
     @else
-        @if($element->getType() === 'checkbox' || $element->getType() === 'radio')
-            <input
-                type="{{ $element->getType() }}"
-                {!! $element->printAttributes() !!}
-                readonly="readonly"
-                disabled="disabled"
-                data-view-only="true"
-            />
+        @if($element['type'] === 'checkbox' || $element['type'] === 'radio')
+            <input type="{{ $element['type'] }}" {{ $attributes->merge($element['attributes']) }}
+                readonly="readonly" disabled="disabled" data-view-only="true"/>
         @else
-            <div class="form-control frm-view-only type-{{ $element->getType() }}" data-view-only="true">
-                {{ $element->getValue() }}
+            <div class="form-control frm-view-only type-{{ $element['type'] }}" data-view-only="true">
+                {{ $element['value'] }}
             </div>
         @endif
     @endif
 @else
-    @if($element->getType() === 'textarea')
-        <textarea
-            {!! $element->printAttributes() !!}
-            @if ($rules) data-rules="{{ json_encode($rules) }}" @endif
-            @if ($messages) data-messages="{{ json_encode($messages) }}" @endif
-            >{{ $element->getValue() }}</textarea>
+    @if($element['type'] === 'textarea')
+        <textarea {{ $attributes->merge($element['attributes']) }}
+            @if ($element['rules']) data-rules="{{ json_encode($element['rules']) }}" @endif
+            @if ($element['messages']) data-messages="{{ json_encode($element['messages']) }}" @endif
+            >{{ $element['value'] }}</textarea>
     @else
-        <input
-            type="{{ $element->getType() }}"
-            {!! $element->printAttributes() !!}
-            @if ($rules) data-rules="{{ json_encode($rules) }}" @endif
-            @if ($messages) data-messages="{{ json_encode($messages) }}" @endif
-            @if ($element->getValue() !== null) value="{{ $element->getValue() }}" @endif
+        <input type="{{ $element['type'] }}" {{ $attributes->merge($element['attributes']) }}
+            @if ($element['rules']) data-rules="{{ json_encode($element['rules']) }}" @endif
+            @if ($element['messages']) data-messages="{{ json_encode($element['messages']) }}" @endif
+            @if ($element['value'] !== null) value="{{ $element['value'] }}" @endif
             />
     @endif
 @endif
 
-{!! $element->getAfter() !!}
+{!! $element['after'] !!}
 
-@foreach(array_reverse($inputWrapper) as $wrap)
+@foreach(array_reverse($element['inputWrapper']) as $wrap)
     </{{ $wrap['tag'] }}>
     {!! $wrap['after'] ?? '' !!}
 @endforeach

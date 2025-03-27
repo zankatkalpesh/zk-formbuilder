@@ -1,51 +1,55 @@
-@php
-    unset($attributes['element']);
-    $tabWrapper = $element->getWrapper('tabWrapper');
-    $contentWrapper = $element->getWrapper('contentWrapper');
-    $tabs = $element->getTabs();
-@endphp
+@props(['element'])
 
-{!! $element->getBefore() !!}
-@foreach($tabWrapper as $wrap)
-    {!! $wrap['before'] ?? '' !!}
-    <{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
+{!! $element['before'] !!}
+
+@foreach($element['tabWrapper'] as $wrap)
+{!! $wrap['before'] ?? '' !!}
+<{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
 @endforeach
-@foreach($tabs as $tab)
-    @foreach($tab['itemWrapper']['wrapper'] as $wrap)
+
+    @foreach($element['tabs'] as $tab)
+        @foreach($tab['itemWrapper']['wrapper'] as $wrap)
         {!! $wrap['before'] ?? '' !!}
         <{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
-    @endforeach
-    {!! $tab['label'] !!}
-    @foreach(array_reverse($tab['itemWrapper']['wrapper']) as $wrap)
+        @endforeach
+
+            {!! $tab['label'] !!}
+
+        @foreach(array_reverse($tab['itemWrapper']['wrapper']) as $wrap)
         </{{ $wrap['tag'] }}>
         {!! $wrap['after'] ?? '' !!}
+        @endforeach
     @endforeach
-@endforeach
-@foreach(array_reverse($tabWrapper) as $wrap)
-    </{{ $wrap['tag'] }}>
-    {!! $wrap['after'] ?? '' !!}
+
+@foreach(array_reverse($element['tabWrapper']) as $wrap)
+</{{ $wrap['tag'] }}>
+{!! $wrap['after'] ?? '' !!}
 @endforeach
 
-@foreach($contentWrapper as $wrap)
-    {!! $wrap['before'] ?? '' !!}
-    <{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
+@foreach($element['contentWrapper'] as $wrap)
+{!! $wrap['before'] ?? '' !!}
+<{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
 @endforeach
-@foreach($tabs as $tab)
-    @foreach($tab['panelWrapper']['wrapper'] as $wrap)
+
+    @foreach($element['tabs'] as $tab)
+        @foreach($tab['panelWrapper']['wrapper'] as $wrap)
         {!! $wrap['before'] ?? '' !!}
         <{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
-    @endforeach
-    @foreach($tab['fields'] as $field)
-        <x-formbuilder::element :element="$field"></x-formbuilder::element>
-    @endforeach
-    @foreach(array_reverse($tab['panelWrapper']['wrapper']) as $wrap)
+        @endforeach
+
+            @foreach($tab['fields'] as $field)
+                <x-formbuilder::element :element="$field"></x-formbuilder::element>
+            @endforeach
+
+        @foreach(array_reverse($tab['panelWrapper']['wrapper']) as $wrap)
         </{{ $wrap['tag'] }}>
         {!! $wrap['after'] ?? '' !!}
+        @endforeach
     @endforeach
-@endforeach
-@foreach(array_reverse($contentWrapper) as $wrap)
-    </{{ $wrap['tag'] }}>
-    {!! $wrap['after'] ?? '' !!}
+
+@foreach(array_reverse($element['contentWrapper']) as $wrap)
+</{{ $wrap['tag'] }}>
+{!! $wrap['after'] ?? '' !!}
 @endforeach
 
-{!! $element->getAfter() !!}
+{!! $element['after'] !!}

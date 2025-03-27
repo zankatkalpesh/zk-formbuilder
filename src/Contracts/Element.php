@@ -182,14 +182,6 @@ interface Element
     public function getValue();
 
     /**
-     * Renders form DOM element
-     *
-     * @param string $view
-     * @return \Illuminate\Contracts\View\View
-     */
-    public function render(string $view = 'formbuilder::element');
-
-    /**
      * Transforms element to array
      *
      * @param string $side frontend|backend
@@ -203,6 +195,13 @@ interface Element
      * @return bool
      */
     public function shouldValidate(): bool;
+
+    /**
+     * Init element rules
+     * 
+     * @return void
+     */
+    public function initRules(): void;
 
     /**
      * Return rules for side
@@ -219,7 +218,6 @@ interface Element
      * @return bool
      */
     public function hasRules(string $side = 'backend'): bool;
-
 
     /** 
      * Get element validation messages

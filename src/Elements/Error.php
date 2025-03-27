@@ -156,17 +156,6 @@ class Error implements ErrorContract
     }
 
     /**
-     * Check if error has position
-     *
-     * @param string $position
-     * @return bool
-     */
-    public function hasPosition($position): bool
-    {
-        return $this->getPosition() === $position;
-    }
-
-    /**
      * Get the element id
      * 
      * @return string
@@ -288,22 +277,6 @@ class Error implements ErrorContract
         $keyConfig = $this->getConfig('field.error' . ($group ? '.' . $group : '') . '.' . $key);
 
         return $keyConfig;
-    }
-
-    /**
-     * Renders form DOM element
-     *
-     * @param string $position
-     * @param string $view
-     * @return mixed
-     */
-    public function render($position = null, string $view = 'formbuilder::error')
-    {
-        if ($position === null || $this->hasPosition($position)) {
-            return view($view, ['error' => $this]);
-        }
-
-        return '';
     }
 
     /**

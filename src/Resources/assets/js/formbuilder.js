@@ -270,13 +270,13 @@ export class ZkSelectElement extends ZkElement {
                 for (let option of this.field.options) {
                     if (option.optgroup) {
                         for (let opt of option.options) {
-                            if (this.isSelected(opt.value)) {
+                            if (opt.selected) {
                                 const optElm = document.createElement('li');
                                 optElm.append(opt.label);
                                 ulElm.appendChild(optElm);
                             }
                         }
-                    } else if (this.isSelected(option.value)) {
+                    } else if (option.selected) {
                         const optElm = document.createElement('li');
                         optElm.append(option.label);
                         ulElm.appendChild(optElm);
@@ -329,12 +329,6 @@ export class ZkSelectElement extends ZkElement {
         for (let attr in attributes) {
             if (exludes.includes(attr)) continue;
             attrs[attr] = attributes[attr];
-        }
-        // Check if a 'value' attribute exists and set 'selected' if applicable
-        const value = attributes.value || '';
-        const selected = this.isSelected(value);
-        if (selected) {
-            attrs['selected'] = true
         }
 
         return attrs;
@@ -734,6 +728,13 @@ export default class ZkFormBuilder {
 
     getValidator() {
         return this.validator;
+    }
+
+    validate() {
+        if (this.validator) {
+            return this.validator.validate();
+        }
+        return true;
     }
 
     setFormObject(frmObj) {

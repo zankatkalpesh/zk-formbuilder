@@ -155,17 +155,6 @@ class Label implements LabelContract
     }
 
     /**
-     * Check if label has position
-     *
-     * @param string $position
-     * @return bool
-     */
-    public function hasPosition($position): bool
-    {
-        return $this->getPosition() === $position;
-    }
-
-    /**
      * Get the element id
      * 
      * @return string
@@ -316,22 +305,6 @@ class Label implements LabelContract
         $keyConfig = $this->getConfig('field.label' . ($group ? '.' . $group : '') . '.' . $key);
 
         return $keyConfig;
-    }
-
-    /**
-     * Renders form DOM element
-     *
-     * @param string $position
-     * @param string $view
-     * @return mixed
-     */
-    public function render($position = null, string $view = 'formbuilder::label')
-    {
-        if ($position === null || $this->hasPosition($position)) {
-            return view($view, ['label' => $this]);
-        }
-
-        return '';
     }
 
     /**

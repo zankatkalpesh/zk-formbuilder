@@ -306,6 +306,8 @@ class TabElement extends Element
      */
     public function hasRules(string $side = 'backend'): bool
     {
+        $this->initRules();
+
         foreach ($this->tabs as $tab) {
             foreach ($tab['fields'] as $field) {
                 if ($field->hasRules($side)) {
@@ -557,6 +559,7 @@ class TabElement extends Element
             'jsElement' => $this->getJsElement(),
             'elementType' => $this->getElementType(),
             'viewOnly' => $this->hasViewOnly(),
+            'properties' => $this->getProperties(),
         ];
     }
 }

@@ -56,4 +56,24 @@ class CheckboxElement extends Element
 
         return $attributes;
     }
+
+    /**
+     * Transforms element to array
+     * 
+     * @param string $side frontend|backend
+     * @return array
+     */
+    public function toArray($side = 'frontend'): array
+    {
+        $arr = parent::toArray($side);
+
+        if (
+            $this->parent &&
+            $this->parent instanceof CheckboxgroupElement
+        ) {
+            $arr['rules'] = $this->parent->getRules($side);
+        }
+
+        return $arr;
+    }
 }

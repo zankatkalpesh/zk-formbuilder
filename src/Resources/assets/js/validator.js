@@ -138,7 +138,8 @@ export const ZkValidatorRules = {
     handler: function (element) {
       // Check checkbox, radio, select, file, and other input types
       if (["checkbox", "radio"].includes(element.type)) {
-        return element.checked;
+        const inputs = document.getElementsByName(element.name);
+        return Array.from(inputs).some((input) => input.checked);
       } else if (element.type === "file") {
         return element.files.length > 0;
       } else if (element.tagName === "SELECT") {
@@ -164,17 +165,25 @@ export const ZkValidatorRules = {
       if (matchField == null) {
         return false;
       }
-      let checked = false;
-      if (
-        (value === "" || value === undefined || value === null) &&
-        matchField.value.trim() !== ""
-      ) {
-        checked = true;
+      let isRequired = false;
+      // Check checkbox, radio, select and other input types
+      if (["checkbox", "radio"].includes(matchField.type)) {
+        const inputs = document.getElementsByName(matchField.name);
+        isRequired = Array.from(inputs).some((input) => input.checked && input.value.trim() == value);
+      } else if (matchField.type === "file") {
+        isRequired = matchField.files.length > 0;
+      } else if (matchField.tagName === "SELECT") {
+        // Check multiple select and check if at least one option is selected and value is not empty
+        isRequired = Array.from(matchField.options).some(
+          (option) => option.selected && option.value.trim() == value
+        );
+      } else {
+        isRequired = ((value === "" || value === undefined || value === null) && matchField.value.trim() !== "");
+        if (value !== "" && matchField.value.trim() === value) {
+          isRequired = true;
+        }
       }
-      if (value !== "" && matchField.value.trim() === value) {
-        checked = true;
-      }
-      return checked ? _self.required.handler(element) : true;
+      return isRequired ? _self.required.handler(element) : true;
     },
     message: function (element, message = "", field, value) {
       return message || ZkValidatorMessages.requiredIf;
@@ -418,6 +427,20 @@ export const ZkValidatorRules = {
   },
   min: {
     handler: function (element, min) {
+      // Check checkbox, select and file
+      if (["checkbox"].includes(element.type)) {
+        const inputs = document.getElementsByName(element.name);
+        return Array.from(inputs).filter((input) => input.checked).length >= min;
+      } else if (element.tagName === "SELECT") {
+        // Check multiple select and check if at least the specified min options are selected
+        if (element.multiple) {
+          return Array.from(element.options).filter(
+            (option) => option.selected && option.value.trim() !== ""
+          ).length >= min;
+        }
+      } else if (element.type === "file") {
+        return element.files.length >= min;
+      }
       // Check if value is empty or is greater than or equal to the specified min value
       return element.value.trim() === "" || parseFloat(element.value) >= min;
     },
@@ -428,6 +451,20 @@ export const ZkValidatorRules = {
   },
   max: {
     handler: function (element, max) {
+      // Check checkbox, select and file
+      if (["checkbox"].includes(element.type)) {
+        const inputs = document.getElementsByName(element.name);
+        return Array.from(inputs).filter((input) => input.checked).length <= max;
+      } else if (element.tagName === "SELECT") {
+        // Check multiple select and check if at most the specified max options are selected
+        if (element.multiple) {
+          return Array.from(element.options).filter(
+            (option) => option.selected && option.value.trim() !== ""
+          ).length <= max;
+        }
+      } else if (element.type === "file") {
+        return element.files.length <= max;
+      }
       // Check if value is empty or is less than or equal to the specified max value
       return element.value.trim() === "" || parseFloat(element.value) <= max;
     },
@@ -438,6 +475,22 @@ export const ZkValidatorRules = {
   },
   between: {
     handler: function (element, min, max) {
+      // Check checkbox, select and file
+      if (["checkbox"].includes(element.type)) {
+        const inputs = document.getElementsByName(element.name);
+        const checked = Array.from(inputs).filter((input) => input.checked).length;
+        return checked >= min && checked <= max;
+      } else if (element.tagName === "SELECT") {
+        // Check multiple select and check if the selected options are between the specified min and max values
+        if (element.multiple) {
+          const selected = Array.from(element.options).filter(
+            (option) => option.selected && option.value.trim() !== ""
+          ).length;
+          return selected >= min && selected <= max;
+        }
+      } else if (element.type === "file") {
+        return element.files.length >= min && element.files.length <= max;
+      }
       // Check if value is empty or is between the specified min and max values
       return (
         element.value.trim() === "" ||
@@ -763,10 +816,7 @@ export class ZkFormValidator {
   }
 
   getElement(element) {
-    return typeof element === "string"
-      ? document.querySelector(`[name="${element}"]`) ||
-          document.getElementById(element)
-      : element;
+    return this.validator.getElement(element);
   }
 
   registerFieldEvents(element, rules, messages) {
@@ -1054,11 +1104,9 @@ export default class ZkValidator {
       if (!ruleResult) {
         isValid = false;
         const _message = messages[rule] || this.messages[rule] || "";
-        const message =
-          this.rules[rule].message &&
-          typeof this.rules[rule].message === "function"
-            ? this.rules[rule].message(element, _message, ...args)
-            : _message;
+        const message = (this.rules[rule].message && typeof this.rules[rule].message === "function")
+          ? this.rules[rule].message(element, _message, ...args)
+          : _message;
         this.errors[element.name] = {
           ...(this.errors[element.name] || {}),
           [rule]: message,
@@ -1112,8 +1160,7 @@ export default class ZkValidator {
 
   getElement(element) {
     return typeof element === "string"
-      ? document.querySelector(`[name="${element}"]`) ||
-          document.getElementById(element)
+      ? document.querySelector(`[name="${element}"]`) || document.getElementById(element)
       : element;
   }
 

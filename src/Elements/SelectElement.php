@@ -127,7 +127,27 @@ class SelectElement extends Element
      */
     public function getOptions(): array
     {
-        return $this->options;
+        $options = [];
+        foreach ($this->options as $option) {
+            if (isset($option['optgroup'])) {
+                $gOptions = [];
+                foreach ($option['options'] as $gOption) {
+                    $attr = [];
+                    if ($this->isSelected($gOption['value'])) {
+                        $attr['selected'] = true;
+                    }
+                    $gOptions[] = [...$gOption, ...$attr];
+                }
+                $options[] = [...$option, 'options' => $gOptions];
+            } else {
+                $attr = [];
+                if ($this->isSelected($option['value'])) {
+                    $attr['selected'] = true;
+                }
+                $options[] = [...$option, ...$attr];
+            }
+        }
+        return $options;
     }
 
     /**
@@ -172,37 +192,13 @@ class SelectElement extends Element
         return $attributes;
     }
 
-    /**
-     * Print option attributes
-     * 
-     * @param array $attributes
-     * @param array $exclude // The attribute to exclude from the output.
-     * @return string
-     */
-    public function optionAttributes(array $attributes = [], $exclude = []): string
-    {
-        $optAttributes = [];
-        foreach ($attributes as $key => $value) {
-            if (in_array($key, $exclude)) continue;
-            $optAttributes[] = (is_numeric($key)) ? trim((string) $value) : $key . '="' . trim((string) $value) . '"';
-        }
-        // Check if a 'value' attribute exists and set 'selected' if applicable
-        $value = $attributes['value'] ?? null;
-        $selected = $this->isSelected($value);
-        if ($selected) {
-            $optAttributes[] = 'selected';
-        }
-
-        return implode(' ', $optAttributes);
-    }
-
     public function isSelected($value): bool
     {
         return (
-            ($value !== null && $this->getData() !== null)  &&
+            ($value !== null && $this->getValue() !== null)  &&
             (
-                ($this->isMultiselect() && in_array($value, (array) $this->getData())) ||
-                (!$this->isMultiselect() && $value == $this->getData())
+                ($this->isMultiselect() && in_array($value, (array) $this->getValue())) ||
+                (!$this->isMultiselect() && $value == $this->getValue())
             )
         );
     }
@@ -219,7 +215,6 @@ class SelectElement extends Element
 
         $arr['multiselect'] = $this->isMultiselect();
         $arr['options'] = $this->getOptions();
-
         return $arr;
     }
 }

@@ -1,1 +1,0 @@
-<x-formbuilder::label :label="$label"></x-formbuilder::label>

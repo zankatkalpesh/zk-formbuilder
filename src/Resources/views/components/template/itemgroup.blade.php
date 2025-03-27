@@ -1,23 +1,19 @@
-@php
-    unset($attributes['element']);
-    $itemWrapper = $element->getWrapper('itemWrapper');
-    $items = $element->getItems();
-@endphp
+@props(['element'])
 
-{!! $element->getBefore() !!}
+{!! $element['before'] !!}
 
-@foreach($itemWrapper as $wrap)
-    {!! $wrap['before'] ?? '' !!}
-    <{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
+@foreach($element['itemWrapper'] as $wrap)
+{!! $wrap['before'] ?? '' !!}
+<{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
 @endforeach
 
-@foreach($items as $item)
+@foreach($element['items'] as $item)
     <x-formbuilder::element :element="$item"></x-formbuilder::element>
 @endforeach
 
-@foreach(array_reverse($itemWrapper) as $wrap)
-    </{{ $wrap['tag'] }}>
-    {!! $wrap['after'] ?? '' !!}
+@foreach(array_reverse($element['itemWrapper']) as $wrap)
+</{{ $wrap['tag'] }}>
+{!! $wrap['after'] ?? '' !!}
 @endforeach
 
-{!! $element->getAfter() !!}
+{!! $element['after'] !!}

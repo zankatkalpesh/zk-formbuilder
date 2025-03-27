@@ -146,6 +146,7 @@ class RadiogroupElement extends Element
             'before' => $this->getBefore(),
             'after' => $this->getAfter(),
             'wrapper' => $this->getWrapper(),
+            'itemWrapper' => $this->getWrapper('itemWrapper'),
             'attributes' => $this->getAttributes(),
             'value' => $this->getValue(),
             'items' => $this->getItemsToArray($side),
@@ -156,6 +157,7 @@ class RadiogroupElement extends Element
             'jsElement' => $this->getJsElement(),
             'elementType' => $this->getElementType(),
             'viewOnly' => $this->hasViewOnly(),
+            'properties' => $this->getProperties(),
         ];
     }
 }

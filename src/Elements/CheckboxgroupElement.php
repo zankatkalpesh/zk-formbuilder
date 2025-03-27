@@ -150,13 +150,14 @@ class CheckboxgroupElement extends Element
             'attributes' => $this->getAttributes(),
             'value' => $this->getValue(),
             'items' => $this->getItemsToArray($side),
-            'rules' => $this->getRules('frontend'),
+            'rules' => $this->getRules($side),
             'invalid' => $this->isInvalid(),
             'error' => $this->getError() ? $this->getError()->toArray() : false,
             'component' => $this->getComponent(),
             'jsElement' => $this->getJsElement(),
             'elementType' => $this->getElementType(),
             'viewOnly' => $this->hasViewOnly(),
+            'properties' => $this->getProperties(),
         ];
     }
 }

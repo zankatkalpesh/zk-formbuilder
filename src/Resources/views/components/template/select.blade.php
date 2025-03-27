@@ -1,34 +1,32 @@
+@props(['element'])
+
 @php
-    unset($attributes['element']);
-    $inputWrapper = $element->getWrapper('inputWrapper');
-    $options = $element->getOptions();
-    $rules = $element->getRules('frontend');
-    $messages = $element->getMessages();
+    $options = $element['options'] ?? [];
 @endphp
 
-@foreach($inputWrapper as $wrap)
+@foreach($element['inputWrapper'] as $wrap)
     {!! $wrap['before'] ?? '' !!}
     <{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
 @endforeach
 
-{!! $element->getBefore() !!}
+{!! $element['before'] !!}
 
-@if($element->hasViewOnly())
-    @if($element->hasView()) 
-        {!! $element->getView() !!}
+@if($element['viewOnly'])
+    @if($element['view']) 
+        {!! $element['view'] !!}
     @else
-        <div class="frm-view-only type-{{ $element->getType() }}" data-view-only="true">
+        <div class="frm-view-only type-{{ $element['type'] }}" data-view-only="true">
             <ul class="list-unstyled">
             @foreach($options as $option)
                 @if(isset($option['optgroup']) && $option['optgroup'])
                     @foreach($option['options'] as $gpOption)
-                        @if($element->isSelected($gpOption['value']))
+                        @if(isset($gpOption['selected']) && $gpOption['selected'])
                             <li>{{ $gpOption['label'] }}</li>
                         @endif
                     @endforeach
                     @continue
                 @endif
-                @if($element->isSelected($option['value']))
+                @if(isset($option['selected']) && $option['selected'])
                     <li>{{ $option['label'] }}</li>
                 @endif
             @endforeach
@@ -36,35 +34,31 @@
         </div>
     @endif
 @else
-    <select
-        {!! $element->printAttributes() !!}
-        @if ($rules) data-rules="{{ json_encode($rules) }}" @endif
-        @if ($messages) data-messages="{{ json_encode($messages) }}" @endif
+    <select {{ $attributes->merge($element['attributes']) }}
+        @if ($element['rules']) data-rules="{{ json_encode($element['rules']) }}" @endif
+        @if ($element['messages']) data-messages="{{ json_encode($element['messages']) }}" @endif
         >
         @foreach($options as $option)
             @if(isset($option['optgroup']) && $option['optgroup'])
-                <optgroup label="{{ $option['label'] }}" {!! $element->printAttributes($option, ['label', 'optgroup', 'options']) !!}>
+                <optgroup label="{{ $option['label'] }}" {{ $attributes->merge($option)->except(['label', 'optgroup', 'options']) }}>
                     @foreach($option['options'] as $gpOption)
-                        <option
-                            {!! $element->optionAttributes($gpOption, ['label', 'value']) !!}
-                            value="{{ $gpOption['value'] }}">
+                        <option {{ $attributes->merge($gpOption)->except(['label', 'value']) }} value="{{ $gpOption['value'] }}">
                             {{ $gpOption['label'] }}
                         </option>
                     @endforeach
                 </optgroup>
                 @continue
             @endif
-            <option
-                {!! $element->optionAttributes($option, ['label', 'value']) !!}
-                value="{{ $option['value'] }}">
+            <option {{ $attributes->merge($option)->except(['label', 'value']) }} value="{{ $option['value'] }}">
                 {{ $option['label'] }}
             </option>
         @endforeach
     </select>
 @endif 
-{!! $element->getAfter() !!}
 
-@foreach(array_reverse($inputWrapper) as $wrap)
+{!! $element['after'] !!}
+
+@foreach(array_reverse($element['inputWrapper']) as $wrap)
     </{{ $wrap['tag'] }}>
     {!! $wrap['after'] ?? '' !!}
 @endforeach

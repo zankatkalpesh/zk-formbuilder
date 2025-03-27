@@ -12,6 +12,13 @@ interface Buttons
     public function getComponent(): string;
 
     /**
+     * Get Javascript Element
+     * 
+     * @return string
+     */
+    public function getJsElement(): string;
+
+    /**
      * Get buttons text before
      * 
      * @return mixed
@@ -42,28 +49,11 @@ interface Buttons
     public function getPosition(): string;
 
     /**
-     * Check if buttons has position
-     *
-     * @param string $position
-     * @return bool
-     */
-    public function hasPosition($position): bool;
-
-    /**
      * Get wrapper
      *
      * @return array
      */
     public function getWrapper(): array;
-
-    /**
-     * Renders form DOM element
-     *
-     * @param string $position
-     * @param string $view
-     * @return mixed
-     */
-    public function render($position = null, string $view = 'formbuilder::buttons');
 
     /**
      * Transforms buttons to array

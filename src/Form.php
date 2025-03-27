@@ -269,7 +269,7 @@ class Form
 		protected Validator $validator,
 		protected Database $database,
 		array $args = [],
-		callable $callback = null
+		?callable $callback = null
 	) {
 
 		if (!empty($args)) {
@@ -829,10 +829,15 @@ class Form
 	/**
 	 * Get form data
 	 *
-	 * @return array
+	 * @param string|null $key
+	 * @return mixed
 	 */
-	public function getData(): array
+	public function getData($key = null): mixed
 	{
+		if ($key) {
+			return Arr::get($this->data, $key);
+		}
+
 		return $this->data;
 	}
 
@@ -945,6 +950,9 @@ class Form
 	public function setKey($key)
 	{
 		$this->key = $key;
+
+		// Set primary key value
+		$this->properties['primaryId'] = $this->key;
 	}
 
 	/**

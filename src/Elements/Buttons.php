@@ -164,17 +164,6 @@ class Buttons implements ButtonsContract
     }
 
     /**
-     * Check if buttons has position
-     *
-     * @param string $position
-     * @return bool
-     */
-    public function hasPosition($position): bool
-    {
-        return $this->getPosition() === $position;
-    }
-
-    /**
      * Get wrapper
      *
      * @return array
@@ -251,22 +240,6 @@ class Buttons implements ButtonsContract
     public function getActions()
     {
         return $this->actions;
-    }
-
-    /**
-     * Renders form DOM element
-     *
-     * @param string $position
-     * @param string $view
-     * @return mixed
-     */
-    public function render($position = null, string $view = 'formbuilder::buttons')
-    {
-        if ($position === null || $this->hasPosition($position)) {
-            return view($view, ['buttons' => $this]);
-        }
-
-        return '';
     }
 
     /**

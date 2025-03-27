@@ -294,17 +294,6 @@ class Action implements ActionContract
     }
 
     /**
-     * Renders form DOM element
-     *
-     * @param string $view
-     * @return \Illuminate\Contracts\View\View
-     */
-    public function render(string $view = 'formbuilder::action')
-    {
-        return view($view, ['action' => $this]);
-    }
-
-    /**
      * Transforms action to array
      * 
      * @return array

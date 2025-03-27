@@ -162,11 +162,7 @@ class WrapperBuilder
         if (isset($tagData['attributes'])) {
             if (is_array($tagData['attributes'])) {
                 foreach ($tagData['attributes'] as $key => $value) {
-                    if (is_numeric($key)) {
-                        $attributes[] = $value;
-                        continue;
-                    }
-                    $attributes[] = $key . '="' . $value . '"';
+                    $attributes[] = (is_numeric($key)) ? trim((string) $value) : $key . '="' . trim((string) $value) . '"';
                 }
             } else {
                 $attributes[] = $tagData['attributes'];

@@ -1,20 +1,17 @@
-@php
-unset($attributes['label']);
-$wrapper = $label->getWrapper();
-@endphp
+@props(['label'])
 
-@foreach($wrapper as $wrap)
-    {!! $wrap['before'] ?? '' !!}
-    <{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
+@foreach($label['wrapper'] as $wrap)
+{!! $wrap['before'] ?? '' !!}
+<{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
 @endforeach
 
-<{{ $label->getTagName() }} {!! $label->printAttributes() !!}>
-    {!! $label->getBefore() !!}
-    {{ $label->getText() }}
-    {!! $label->getAfter() !!}
-</{{ $label->getTagName() }}>
+    <{{ $label['tag'] }} {{ $attributes->merge($label['attributes']) }}>
+        {!! $label['before'] !!}
+        {{ $label['text'] }}
+        {!! $label['after'] !!}
+    </{{ $label['tag'] }}>
 
-@foreach(array_reverse($wrapper) as $wrap)
-    </{{ $wrap['tag'] }}>
-    {!! $wrap['after'] ?? '' !!}
+@foreach(array_reverse($label['wrapper']) as $wrap)
+</{{ $wrap['tag'] }}>
+{!! $wrap['after'] ?? '' !!}
 @endforeach

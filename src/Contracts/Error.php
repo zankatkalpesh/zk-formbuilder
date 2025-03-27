@@ -10,7 +10,14 @@ interface Error
      * @return string
      */
     public function getComponent(): string;
-    
+
+    /**
+     * Get Javascript Element
+     * 
+     * @return string
+     */
+    public function getJsElement(): string;
+
     /**
      * Get error text before
      * 
@@ -49,14 +56,6 @@ interface Error
     public function getPosition(): string;
 
     /**
-     * Check if error has position
-     *
-     * @param string $position
-     * @return bool
-     */
-    public function hasPosition($position): bool;
-
-    /**
      * Get error html tag name
      * 
      * @return string
@@ -83,15 +82,6 @@ interface Error
      * @return array
      */
     public function getWrapper(): array;
-
-    /**
-     * Renders form DOM element
-     *
-     * @param string $position
-     * @param string $view
-     * @return mixed
-     */
-    public function render($position = null, string $view = 'formbuilder::error');
 
     /**
      * Transforms error to array

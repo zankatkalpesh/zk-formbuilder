@@ -185,12 +185,6 @@ class Element implements ElementContract
         $this->viewOnly = $this->getConfigByKey('viewOnly') != null ? $this->getConfigByKey('viewOnly') : $this->parent->hasViewOnly();
         $this->modifyValue = $this->getConfigByKey('modifyValue') ?? null;
         $this->modifyData = $this->getConfigByKey('modifyData') ?? null;
-
-        $rules = $this->field['rules'] ?? $this->rules;
-        if (is_callable($rules)) {
-            $rules = call_user_func($rules, $this);
-        }
-        $this->rules = $rules;
     }
 
     /**
@@ -254,7 +248,7 @@ class Element implements ElementContract
     {
         $config = config($this->configPath);
         if ($key) {
-            return Arr::get($config, $key);
+            return Arr::get($config, $key, null);
         }
 
         return $config;
@@ -590,6 +584,22 @@ class Element implements ElementContract
     }
 
     /**
+     * Init element rules
+     * 
+     * @return void
+     */
+    public function initRules(): void
+    {
+        if ($this->rules) return;
+
+        $rules = $this->field['rules'] ?? $this->rules;
+        if (is_callable($rules)) {
+            $rules = call_user_func($rules, $this);
+        }
+        $this->rules = $rules;
+    }
+
+    /**
      * Return rules for side
      *
      * @param string $side
@@ -597,6 +607,8 @@ class Element implements ElementContract
      */
     public function getRules(string $side = 'backend')
     {
+        $this->initRules();
+
         if (!$this->hasRules($side)) {
             return;
         }
@@ -618,6 +630,8 @@ class Element implements ElementContract
      */
     public function hasRules(string $side = 'backend'): bool
     {
+        $this->initRules();
+
         if (is_array($this->rules)) {
             if (array_key_exists($side, $this->rules)) {
                 return true;
@@ -694,7 +708,7 @@ class Element implements ElementContract
      */
     public function shouldValidate(): bool
     {
-        return $this->validator && $this->hasRules();
+        return $this->validator && $this->hasRules() && !$this->hasViewOnly();
     }
 
     /**
@@ -957,8 +971,8 @@ class Element implements ElementContract
     protected function getConfigByKey($key, $group = null)
     {
         // Try to get the configuration directly from the 'field' array
-        $keyConfig = Arr::get($this->field, $key);
-        if ($keyConfig) {
+        $keyConfig = Arr::get($this->field, $key, null);
+        if ($keyConfig !== null) {
             return $keyConfig;
         }
 
@@ -1071,17 +1085,6 @@ class Element implements ElementContract
     }
 
     /**
-     * Renders form DOM element
-     *
-     * @param string $view
-     * @return \Illuminate\Contracts\View\View
-     */
-    public function render(string $view = 'formbuilder::element')
-    {
-        return view($view, ['element' => $this]);
-    }
-
-    /**
      * Transforms element to array
      * 
      * @param string $side frontend|backend
@@ -1111,6 +1114,7 @@ class Element implements ElementContract
             'elementType' => $this->getElementType(),
             'viewOnly' => $this->hasViewOnly(),
             'view' => $this->hasView() ? $this->getView() : false,
+            'properties' => $this->getProperties(),
         ];
     }
 }

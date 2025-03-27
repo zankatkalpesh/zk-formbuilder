@@ -1,1 +1,0 @@
-<x-formbuilder::error :error="$error"></x-formbuilder::error>

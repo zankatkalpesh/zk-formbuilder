@@ -1,23 +1,19 @@
-@php
-unset($attributes['buttons']);
-$wrapper = $buttons->getWrapper();
-$actions = $buttons->getActions();
-@endphp
+@props(['buttons'])
 
-@foreach($wrapper as $wrap)
+@foreach($buttons['wrapper'] as $wrap)
     {!! $wrap['before'] ?? '' !!}
     <{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
 @endforeach
 
-{!! $buttons->getBefore() !!}
+{!! $buttons['before'] !!}
 
-@foreach($actions as $action)
-    <x-dynamic-component :component="$action->getComponent()" :action="$action"></x-dynamic-component>
+@foreach($buttons['actions'] as $action)
+    <x-dynamic-component :component="$action['component']" :action="$action"></x-dynamic-component>
 @endforeach
 
-{!! $buttons->getAfter() !!}
+{!! $buttons['after'] !!}
 
-@foreach(array_reverse($wrapper) as $wrap)
+@foreach(array_reverse($buttons['wrapper']) as $wrap)
     </{{ $wrap['tag'] }}>
     {!! $wrap['after'] ?? '' !!}
 @endforeach

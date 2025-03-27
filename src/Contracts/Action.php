@@ -12,6 +12,13 @@ interface Action
     public function getComponent(): string;
 
     /**
+     * Get Javascript Element
+     * 
+     * @return string
+     */
+    public function getJsElement(): string;
+
+    /**
      * Get action text before
      * 
      * @return mixed
@@ -74,14 +81,6 @@ interface Action
      * @return array
      */
     public function getWrapper(): array;
-
-    /**
-     * Renders form DOM element
-     *
-     * @param string $view
-     * @return \Illuminate\Contracts\View\View
-     */
-    public function render(string $view = 'formbuilder::action');
 
     /**
      * Transforms action to array

@@ -1,1 +1,0 @@
-<x-formbuilder::element :element="$element"></x-formbuilder::element>

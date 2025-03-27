@@ -169,6 +169,8 @@ class GroupElement extends Element
      */
     public function hasRules(string $side = 'backend'): bool
     {
+        $this->initRules();
+
         foreach ($this->getFields() as $field) {
             if ($field->hasRules($side)) {
                 return true;
@@ -367,6 +369,7 @@ class GroupElement extends Element
             'jsElement' => $this->getJsElement(),
             'elementType' => $this->getElementType(),
             'viewOnly' => $this->hasViewOnly(),
+            'properties' => $this->getProperties(),
         ];
     }
 }

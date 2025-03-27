@@ -1,57 +1,57 @@
-@php
-    unset($attributes['element']);
-    $actionComponent = $element->getActionComponent();
-    $contentWrapper = $element->getWrapper('contentWrapper');
-    $viewOnly = $element->hasViewOnly(); 
-@endphp
+@props(['element'])
 
-{!! $element->getBefore() !!}
+{!! $element['before'] !!}
 
-@foreach($contentWrapper as $wrap)
+@foreach($element['contentWrapper'] as $wrap)
+{!! $wrap['before'] ?? '' !!}
+<{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
+@endforeach
+
+@foreach($element['rows'] as $row)
+    
+    @php
+        $removeAction = $row['removeAction'] ?? null;
+        $rowWrapper = $row['wrapper']['wrapper'] ?? [];
+        $fieldWrapper = $row['wrapper']['fieldWrapper']['wrapper'] ?? [];
+    @endphp
+
+    @foreach($rowWrapper as $wrap)
     {!! $wrap['before'] ?? '' !!}
     <{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
-@endforeach
-@foreach($element->getRows() as $row)
-    @php
-        $removeAction = $row['removeAction'] ?? [];
-        $wrapper = $row['wrapper']['wrapper'] ?? [];
-        $fieldWrapper = $row['wrapper']['fieldWrapper'] ?? [];
-        $fieldWrapper = $fieldWrapper['wrapper'] ?? [];
-    @endphp
-    @foreach($wrapper as $wrap)
+    @endforeach
+
+        @if(!$element['viewOnly'] && $removeAction && $removeAction['show'] && $removeAction['position'] == 'before')
+            <x-dynamic-component :component="$removeAction['component']" :action="$removeAction"></x-dynamic-component>
+        @endif
+
+        @foreach($fieldWrapper as $wrap)
         {!! $wrap['before'] ?? '' !!}
         <{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
-    @endforeach
+        @endforeach
 
-    @if(!$viewOnly && $removeAction && $removeAction['show'] && $removeAction['position'] == 'before')
-        <x-dynamic-component :component="$actionComponent" :element="$element" :action="$removeAction"></x-dynamic-component>
-    @endif
+            @foreach($row['fields'] as $field)
+                <x-formbuilder::element :element="$field"></x-formbuilder::element>
+            @endforeach
 
-    @foreach($fieldWrapper as $wrap)
-        {!! $wrap['before'] ?? '' !!}
-        <{{ $wrap['tag'] }} {!! $wrap['attributes'] !!}>
-    @endforeach
-
-    @foreach($row['fields'] as $field)
-        <x-formbuilder::element :element="$field"></x-formbuilder::element>
-    @endforeach
-
-    @foreach(array_reverse($fieldWrapper) as $wrap)
+        @foreach(array_reverse($fieldWrapper) as $wrap)
         </{{ $wrap['tag'] }}>
         {!! $wrap['after'] ?? '' !!}
-    @endforeach
+        @endforeach
 
-    @if(!$viewOnly && $removeAction && $removeAction['show'] && $removeAction['position'] == 'after')
-        <x-dynamic-component :component="$actionComponent" :element="$element" :action="$removeAction"></x-dynamic-component>
-    @endif
+        @if(!$element['viewOnly'] && $removeAction && $removeAction['show'] && $removeAction['position'] == 'after')
+            <x-dynamic-component :component="$removeAction['component']" :action="$removeAction"></x-dynamic-component>
+        @endif
 
-    @foreach(array_reverse($wrapper) as $wrap)
-        </{{ $wrap['tag'] }}>
-        {!! $wrap['after'] ?? '' !!}
-    @endforeach
-@endforeach
-@foreach(array_reverse($contentWrapper) as $wrap)
+    @foreach(array_reverse($rowWrapper) as $wrap)
     </{{ $wrap['tag'] }}>
     {!! $wrap['after'] ?? '' !!}
+    @endforeach
+
 @endforeach
-{!! $element->getAfter() !!}
+
+@foreach(array_reverse($element['contentWrapper']) as $wrap)
+</{{ $wrap['tag'] }}>
+{!! $wrap['after'] ?? '' !!}
+@endforeach
+
+{!! $element['after'] !!}
