@@ -78,12 +78,12 @@ return [
         ],
         'checkboxgroup' => [
             'wrapper' => [
-                'class' => 'col-md-4',
+                'class' => 'col-md-4 {errorClass}',
             ],
         ],
         'radiogroup' => [
             'wrapper' => [
-                'class' => 'col-md-4',
+                'class' => 'col-md-4 {errorClass}',
             ],
         ],
         'checkbox' => [

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Zk\FormBuilder\Elements;
 
+use Illuminate\Support\Arr;
 use Zk\FormBuilder\Helpers\WrapperBuilder;
 
 class SelectElement extends Element
@@ -121,33 +122,61 @@ class SelectElement extends Element
     }
 
     /**
+     * Get element data
+     * 
+     * @return mixed
+     */
+    public function getData()
+    {
+        if ($this->data === null || !Arr::has($this->data, $this->getNameKey())) {
+            return null;
+        }
+
+        $data = (array) Arr::get($this->data, $this->getNameKey(), []);
+
+        // Match values with options
+        $validOptions = [];
+        foreach ($this->options as $option) {
+            if (!empty($option['optgroup'])) {
+                foreach ($option['options'] as $gOption) {
+                    if (empty($gOption['disabled'])) {
+                        $validOptions[$gOption['value']] = true;
+                    }
+                }
+            } elseif (empty($option['disabled'])) {
+                $validOptions[$option['value']] = true;
+            }
+        }
+        $validValues = [];
+        foreach ($data as $value) {
+            if (isset($validOptions[$value])) {
+                $validValues[] = $value;
+            }
+        }
+
+        return empty($validValues) ? null : ($this->isMultiselect() ? $validValues : reset($validValues));
+    }
+
+    /**
      * Get options
      *
      * @return array
      */
     public function getOptions(): array
     {
-        $options = [];
-        foreach ($this->options as $option) {
-            if (isset($option['optgroup'])) {
-                $gOptions = [];
-                foreach ($option['options'] as $gOption) {
-                    $attr = [];
+        return array_map(function ($option) {
+            if (!empty($option['optgroup'])) {
+                $option['options'] = array_map(function ($gOption) {
                     if ($this->isSelected($gOption['value'])) {
-                        $attr['selected'] = true;
+                        $gOption['selected'] = true;
                     }
-                    $gOptions[] = [...$gOption, ...$attr];
-                }
-                $options[] = [...$option, 'options' => $gOptions];
-            } else {
-                $attr = [];
-                if ($this->isSelected($option['value'])) {
-                    $attr['selected'] = true;
-                }
-                $options[] = [...$option, ...$attr];
+                    return $gOption;
+                }, $option['options']);
+            } elseif ($this->isSelected($option['value'])) {
+                $option['selected'] = true;
             }
-        }
-        return $options;
+            return $option;
+        }, $this->options);
     }
 
     /**

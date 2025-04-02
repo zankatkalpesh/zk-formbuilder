@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Zk\FormBuilder\Elements;
 
+use Illuminate\Support\Arr;
 use Zk\FormBuilder\Helpers\WrapperBuilder;
 
 class CheckboxgroupElement extends Element
@@ -95,6 +96,28 @@ class CheckboxgroupElement extends Element
     public function setData($data): void
     {
         $this->data = $data;
+    }
+
+    /**
+     * Get element data
+     * 
+     * @return mixed
+     */
+    public function getData()
+    {
+        if ($this->data === null || !Arr::has($this->data, $this->getNameKey())) {
+            return null;
+        }
+
+        $data = (array) Arr::get($this->data, $this->getNameKey(), []);
+
+        // Match values with items
+        $data = array_values(array_filter(
+            $data,
+            fn($value) => collect($this->getItems())->contains(fn($item) => !$item->hasViewOnly() && $item->getValue() == $value)
+        ));
+
+        return !empty($data) ? $data : null;
     }
 
     /**

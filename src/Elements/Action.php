@@ -279,11 +279,9 @@ class Action implements ActionContract
      */
     protected function getConfigByKey($key, $group = null)
     {
-        // Get the configuration directly from the 'action' array 
-        $actionProperty = $this->action;
         // Try to get the configuration directly from the 'action' array
-        $keyConfig = $actionProperty[$key] ?? null;
-        if (!empty($keyConfig)) {
+        $keyConfig = Arr::get($this->action, $key, null);
+        if ($keyConfig !== null) {
             return $keyConfig;
         }
 

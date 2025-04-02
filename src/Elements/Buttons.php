@@ -214,16 +214,14 @@ class Buttons implements ButtonsContract
      */
     protected function getConfigByKey($key, $group = null)
     {
-        // Get the configuration directly from the 'buttons' array 
-        $buttonsProperty = $this->form->buttons;
         // Try to get the configuration directly from the 'buttons' array
-        $keyConfig = $buttonsProperty[$key] ?? null;
-        if (!empty($keyConfig)) {
+        $keyConfig = Arr::get($this->form->buttons, $key, null);
+        if ($keyConfig !== null) {
             return $keyConfig;
         }
         // If not found in 'buttons', heck type-specific configuration
         $keyConfig = $this->getConfig('form.buttons.' . $key);
-        if (!empty($keyConfig)) {
+        if ($keyConfig !== null) {
             return $keyConfig;
         }
         // As a last resort, check general 'field.{$group?}.{key}' configuration

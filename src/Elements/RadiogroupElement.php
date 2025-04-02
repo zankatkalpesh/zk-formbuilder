@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Zk\FormBuilder\Elements;
 
+use Illuminate\Support\Arr;
 use Zk\FormBuilder\Helpers\WrapperBuilder;
 
 class RadiogroupElement extends Element
@@ -95,6 +96,26 @@ class RadiogroupElement extends Element
     public function setData($data): void
     {
         $this->data = $data;
+    }
+
+    /**
+     * Get element data
+     * 
+     * @return mixed
+     */
+    public function getData()
+    {
+        if ($this->data === null || !Arr::has($this->data, $this->getNameKey())) {
+            return null;
+        }
+
+        $data = Arr::get($this->data, $this->getNameKey(), null);
+
+        if ($data === null || !collect($this->getItems())->contains(fn($item) => !$item->hasViewOnly() && $item->getValue() == $data)) {
+            return null;
+        }
+
+        return $data;
     }
 
     /**

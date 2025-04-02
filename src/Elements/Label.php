@@ -289,16 +289,14 @@ class Label implements LabelContract
      */
     protected function getConfigByKey($key, $group = null)
     {
-        // Get the configuration directly from the 'field' array 
-        $labelProperty = $this->element->getLabelProperty();
-        // Try to get the configuration directly from the 'field' array
-        $keyConfig = $labelProperty[$key] ?? null;
-        if (!empty($keyConfig)) {
+        // Try to get the configuration directly field the 'getLabelProperty' array
+        $keyConfig = Arr::get($this->element->getLabelProperty(), $key, null);
+        if ($keyConfig !== null) {
             return $keyConfig;
         }
         // If not found in 'field', heck type-specific configuration
         $keyConfig = $this->getConfig('type.' . $this->element->getType() . '.label.' . $key);
-        if (!empty($keyConfig)) {
+        if ($keyConfig !== null) {
             return $keyConfig;
         }
         // As a last resort, check general 'field.{$group?}.{key}' configuration

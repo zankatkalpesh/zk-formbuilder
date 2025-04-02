@@ -261,16 +261,14 @@ class Error implements ErrorContract
      */
     protected function getConfigByKey($key, $group = null)
     {
-        // Get the configuration directly from the 'field' array 
-        $errorProperty = $this->element->getErrorProperty();
-        // Try to get the configuration directly from the 'field' array
-        $keyConfig = $errorProperty[$key] ?? null;
-        if (!empty($keyConfig)) {
+        // Try to get the configuration directly field the 'getErrorProperty' array
+        $keyConfig = Arr::get($this->element->getErrorProperty(), $key, null);
+        if ($keyConfig !== null) {
             return $keyConfig;
         }
         // If not found in 'field', heck type-specific configuration
         $keyConfig = $this->getConfig('type.' . $this->element->getType() . '.error.' . $key);
-        if (!empty($keyConfig)) {
+        if ($keyConfig !== null) {
             return $keyConfig;
         }
         // As a last resort, check general 'field.{$group?}.{key}' configuration

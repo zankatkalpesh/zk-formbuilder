@@ -15,21 +15,19 @@
     @if($element['view']) 
         {!! $element['view'] !!}
     @else
-        <div class="frm-view-only type-{{ $element['type'] }}" data-view-only="true">
+        <div class="frm-view-only type-{{ $element['type'] }}" data-view-only="true" data-multiselect="{{ $element['multiselect'] ? 'true' : 'false' }}">
             <ul class="list-unstyled">
-            @foreach($options as $option)
-                @if(isset($option['optgroup']) && $option['optgroup'])
-                    @foreach($option['options'] as $gpOption)
-                        @if(isset($gpOption['selected']) && $gpOption['selected'])
-                            <li>{{ $gpOption['label'] }}</li>
-                        @endif
-                    @endforeach
-                    @continue
-                @endif
-                @if(isset($option['selected']) && $option['selected'])
-                    <li>{{ $option['label'] }}</li>
-                @endif
-            @endforeach
+                @foreach($options as $option)
+                    @if(!empty($option['optgroup']))
+                        @foreach($option['options'] as $gpOption)
+                            @if(!empty($gpOption['selected']))
+                                <li>{{ $gpOption['label'] }}</li>
+                            @endif
+                        @endforeach
+                    @elseif(!empty($option['selected']))
+                        <li>{{ $option['label'] }}</li>
+                    @endif
+                @endforeach
             </ul>
         </div>
     @endif
@@ -39,19 +37,19 @@
         @if ($element['messages']) data-messages="{{ json_encode($element['messages']) }}" @endif
         >
         @foreach($options as $option)
-            @if(isset($option['optgroup']) && $option['optgroup'])
+            @if(!empty($option['optgroup']))
                 <optgroup label="{{ $option['label'] }}" {{ $attributes->merge($option)->except(['label', 'optgroup', 'options']) }}>
                     @foreach($option['options'] as $gpOption)
-                        <option {{ $attributes->merge($gpOption)->except(['label', 'value']) }} value="{{ $gpOption['value'] }}">
+                        <option value="{{ $gpOption['value'] }}" {{ $attributes->merge($gpOption)->except(['label', 'value']) }}>
                             {{ $gpOption['label'] }}
                         </option>
                     @endforeach
                 </optgroup>
-                @continue
+            @else
+                <option value="{{ $option['value'] }}" {{ $attributes->merge($option)->except(['label', 'value']) }}>
+                    {{ $option['label'] }}
+                </option>
             @endif
-            <option {{ $attributes->merge($option)->except(['label', 'value']) }} value="{{ $option['value'] }}">
-                {{ $option['label'] }}
-            </option>
         @endforeach
     </select>
 @endif 

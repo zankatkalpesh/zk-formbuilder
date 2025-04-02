@@ -263,6 +263,7 @@ export class ZkSelectElement extends ZkElement {
             const elm = document.createElement('div');
             elm.setAttribute('class', `frm-view-only type-${this.field.type}`);
             elm.setAttribute('data-view-only', 'true');
+            elm.setAttribute('data-multiselect', (this.isMultiselect() ? 'true' : 'false'));
             const ulElm = document.createElement('ul');
             ulElm.setAttribute('class', 'list-unstyled');
             // Options

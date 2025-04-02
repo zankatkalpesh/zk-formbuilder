@@ -529,15 +529,9 @@ class Element implements ElementContract
      */
     public function getData()
     {
-        if ($this->data === null) {
-            return $this->data;
-        }
-
-        if (Arr::has($this->data, $this->getNameKey())) {
-            return Arr::get($this->data, $this->getNameKey(), null);
-        }
-
-        return null;
+        return $this->data !== null && Arr::has($this->data, $this->getNameKey())
+            ? Arr::get($this->data, $this->getNameKey())
+            : null;
     }
 
     /**
@@ -978,7 +972,7 @@ class Element implements ElementContract
 
         // If not found in 'field', heck type-specific configuration
         $keyConfig = $this->getConfig('type.' . $this->getType() . '.' . $key);
-        if (!empty($keyConfig)) {
+        if ($keyConfig !== null) {
             return $keyConfig;
         }
         // As a last resort, check general 'field.{$group?}.{key}' configuration
@@ -1065,11 +1059,12 @@ class Element implements ElementContract
             $field['value'] = $value;
             $field['label'] = $label;
             $field['id'] = $id;
-            $config = array_merge($itemConfig, $item);
-            // remove label config from $config
-            if (isset($config['label'])) unset($config['label']);
-            // Merge field with config
-            $field = array_merge($field, $config);
+            // Merge item with item config
+            $item = array_merge($itemConfig, $item);
+            // remove label from item
+            if (isset($item['label'])) unset($item['label']);
+            // Merge field with item
+            $field = array_merge($field, $item);
             // Make field
             $element = $this->elementFactory->make(
                 $field,
