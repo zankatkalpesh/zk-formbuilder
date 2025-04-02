@@ -204,6 +204,14 @@ interface Element
     public function initRules(): void;
 
     /**
+     * Element is required
+     * 
+     * @param string $side
+     * @return bool
+     */
+    public function isRequired(string $side = 'backend'): bool;
+
+    /**
      * Return rules for side
      *
      * @param string $side

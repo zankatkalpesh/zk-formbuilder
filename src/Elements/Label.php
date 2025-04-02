@@ -215,6 +215,10 @@ class Label implements LabelContract
             'class' => $this->getConfigByKey('class') ?? '',
         ];
 
+        if ($this->element->isRequired('frontend')) {
+            $attributes['class'] .= ' ' . ($this->getConfigByKey('requiredClass') ?? 'required');
+        }
+
         if (!isset($labelAttribute['for']) || $labelAttribute['for'] === true) {
             $attributes['for'] = $this->getId();
         }

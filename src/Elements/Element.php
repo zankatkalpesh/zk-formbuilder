@@ -594,6 +594,23 @@ class Element implements ElementContract
     }
 
     /**
+     * Element is required
+     * 
+     * @param string $side
+     * @return bool
+     */
+    public function isRequired(string $side = 'backend'): bool
+    {
+        if (!$this->hasRules($side)) {
+            return false;
+        }
+
+        $rules = $this->getRules($side);
+
+        return (is_array($rules) && in_array('required', $rules, true) || (is_string($rules) && str_contains($rules, 'required')));
+    }
+
+    /**
      * Return rules for side
      *
      * @param string $side
@@ -601,8 +618,6 @@ class Element implements ElementContract
      */
     public function getRules(string $side = 'backend')
     {
-        $this->initRules();
-
         if (!$this->hasRules($side)) {
             return;
         }
