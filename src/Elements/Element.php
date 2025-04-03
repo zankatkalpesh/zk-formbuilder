@@ -1125,6 +1125,7 @@ class Element implements ElementContract
             'viewOnly' => $this->hasViewOnly(),
             'view' => $this->hasView() ? $this->getView() : false,
             'properties' => $this->getProperties(),
+            'isRequired' => $this->isRequired(),
         ];
     }
 }

@@ -181,6 +181,7 @@ class CheckboxgroupElement extends Element
             'elementType' => $this->getElementType(),
             'viewOnly' => $this->hasViewOnly(),
             'properties' => $this->getProperties(),
+            'isRequired' => $this->isRequired(),
         ];
     }
 }

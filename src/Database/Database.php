@@ -191,8 +191,14 @@ class Database implements DatabaseContract
      */
     private function fillMetaData($emptyOnNull = true)
     {
-        $metaData = $this->form->getMetaData();
-        $this->entity->fill($metaData, $emptyOnNull);
+        $metaData = $this->form->getMetaData() ?? [];
+        foreach ($metaData as $key => $value) {
+            if (is_array($value)) {
+                $this->entity[$key] = json_encode($value);
+            } else {
+                $this->entity[$key] = $emptyOnNull ? ($value ?? null) : $value;
+            }
+        }
     }
 
     /**
