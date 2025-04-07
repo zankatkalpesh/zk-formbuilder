@@ -271,9 +271,28 @@ class TabElement extends Element
 
         if ($this->modifyData && is_callable($this->modifyData)) {
             $modifyData = call_user_func($this->modifyData, $modifyData, $this);
+            return $modifyData;
+        }
+
+        // If element is parent, add child data to parent 
+        if ($this->isParent() && ($modifyData !== null && Arr::has($modifyData, $this->getNameKey()))) {
+            $tabData = Arr::get($modifyData, $this->getNameKey(), []);
+            // Format data to save as per column type
+            if ($this->getColumnType() === 'json' && !empty($tabData)) {
+                $tabData = is_string($tabData) ? json_decode($tabData, true) : $tabData;
+            }
+            Arr::set($modifyData, $this->getNameKey(), $tabData);
         }
 
         foreach ($this->tabs as $tab) {
+            $tabChildData = Arr::get($modifyData, $tab['name'], []);
+            // Format data to save as per column type
+            if ($tab['column']['type'] === 'json' && !empty($tabChildData)) {
+                $tabChildData = is_string($tabChildData) ? json_decode($tabChildData, true) : $tabChildData;
+            }
+            // Set child data to parent
+            Arr::set($modifyData, $tab['name'], $tabChildData);
+
             foreach ($tab['fields'] as $field) {
                 $modifyData = $field->modifyData($modifyData);
             }
@@ -444,19 +463,19 @@ class TabElement extends Element
             Arr::forget($newAttributes, $this->getColumnName());
             // Format data to save as per column type
             if ($this->getColumnType() === 'json' && !empty($childData)) {
-                $childData = json_decode($childData, true);
+                $childData = is_string($childData) ? json_decode($childData, true) : $childData;
             }
             // Set child data to parent
             Arr::set($newAttributes, $this->getNameKey(), $childData);
         }
 
-        // If element is parent, add child data to parent 
+        // Load tabs
         foreach ($this->tabs as $tab) {
             $tabChildData = Arr::get($newAttributes, $tab['column']['name'], []);
             Arr::forget($newAttributes, $tab['column']['name']);
             // Format data to save as per column type
             if ($tab['column']['type'] === 'json' && !empty($tabChildData)) {
-                $tabChildData = json_decode($tabChildData, true);
+                $tabChildData = is_string($tabChildData) ? json_decode($tabChildData, true) : $tabChildData;
             }
             // Set child data to parent
             Arr::set($newAttributes, $tab['name'], $tabChildData);
@@ -501,7 +520,7 @@ class TabElement extends Element
         $attributes = $entity->getAttributes();
         $newAttributes = Arr::undot($attributes);
 
-        // If element is parent, add child data to parent 
+        // Fill tabs
         foreach ($this->tabs as $tab) {
             $tabChildData = Arr::get($newAttributes, $tab['name'], []);
             Arr::forget($newAttributes, $tab['name']);
@@ -512,7 +531,7 @@ class TabElement extends Element
             // Set child data to parent
             Arr::set($newAttributes, $tab['column']['name'], $tabChildData);
         }
-
+        // If element is parent, add child data to parent
         if ($this->isParent()) {
             // Add child data to parent
             $childData = Arr::get($newAttributes, $this->getNameKey(), []);

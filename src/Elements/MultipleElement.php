@@ -372,13 +372,19 @@ class MultipleElement extends Element
 
         if ($this->modifyData && is_callable($this->modifyData)) {
             $modifyData = call_user_func($this->modifyData, $modifyData, $this);
+            return $modifyData;
         }
 
         if ($modifyData !== null && Arr::has($modifyData, $this->getNameKey())) {
-            // Add new row based on data length
             $elmData = Arr::get($modifyData, $this->getNameKey(), []);
+            // Format data to save as per column type
+            if ($this->getColumnType() === 'json' && !empty($elmData)) {
+                $elmData = is_string($elmData) ? json_decode($elmData, true) : $elmData;
+            }
             $elmData = array_values($elmData);
+
             Arr::set($modifyData, $this->getNameKey(), $elmData);
+            // Add new row based on data length
             $this->adjustRowsBasedOnData($elmData);
         }
 
@@ -571,7 +577,7 @@ class MultipleElement extends Element
 
         // Format data to save as per column type
         if ($this->getColumnType() === 'json' && !empty($childData)) {
-            $childData = json_decode($childData, true);
+            $childData = is_string($childData) ? json_decode($childData, true) : $childData;
         }
 
         // Add new row based on data length
@@ -586,7 +592,7 @@ class MultipleElement extends Element
         // Set entity attributes
         $entity->setRawAttributes($newAttributes);
 
-        // Load fields
+        // Load rows
         $childData = [];
         foreach ($this->rows as $row) {
             foreach ($row['fields'] as $field) {
@@ -610,7 +616,7 @@ class MultipleElement extends Element
         if (!$this->isPersist() || $this->hasViewOnly()) {
             return;
         }
-        // Fill fields
+        // Fill rows
         foreach ($this->rows as $row) {
             foreach ($row['fields'] as $field) {
                 $field->fill($entity, $data, $emptyOnNull);

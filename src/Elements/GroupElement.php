@@ -128,9 +128,20 @@ class GroupElement extends Element
 
         if ($this->modifyData && is_callable($this->modifyData)) {
             $modifyData = call_user_func($this->modifyData, $modifyData, $this);
+            return $modifyData;
         }
 
-        foreach ($this->getFields() as $field) {
+        // If element is parent, add child data to parent 
+        if ($this->isParent() && ($modifyData !== null && Arr::has($modifyData, $this->getNameKey()))) {
+            $elmData = Arr::get($modifyData, $this->getNameKey(), []);
+            // Format data to save as per column type
+            if ($this->getColumnType() === 'json' && !empty($elmData)) {
+                $elmData = is_string($elmData) ? json_decode($elmData, true) : $elmData;
+            }
+            Arr::set($modifyData, $this->getNameKey(), $elmData);
+        }
+
+        foreach ($this->fields as $field) {
             $modifyData = $field->modifyData($modifyData);
         }
 
@@ -146,7 +157,7 @@ class GroupElement extends Element
     {
         $this->data = $data;
 
-        foreach ($this->getFields() as $field) {
+        foreach ($this->fields as $field) {
             $field->setData($this->data);
         }
     }
@@ -171,7 +182,7 @@ class GroupElement extends Element
     {
         $this->initRules();
 
-        foreach ($this->getFields() as $field) {
+        foreach ($this->fields as $field) {
             if ($field->hasRules($side)) {
                 return true;
             }
@@ -193,7 +204,7 @@ class GroupElement extends Element
         }
 
         // Validate fields
-        foreach ($this->getFields() as $field) {
+        foreach ($this->fields as $field) {
             $field->validate($messages);
         }
     }
@@ -209,7 +220,7 @@ class GroupElement extends Element
             return false;
         }
 
-        foreach ($this->getFields() as $field) {
+        foreach ($this->fields as $field) {
             if ($field->isInvalid()) {
                 return true;
             }
@@ -282,7 +293,7 @@ class GroupElement extends Element
             Arr::forget($newAttributes, $this->getColumnName());
             // Format data to save as per column type
             if ($this->getColumnType() === 'json' && !empty($childData)) {
-                $childData = json_decode($childData, true);
+                $childData = is_string($childData) ? json_decode($childData, true) : $childData;
             }
             // Set child data to parent
             Arr::set($newAttributes, $this->getNameKey(), $childData);
@@ -293,8 +304,7 @@ class GroupElement extends Element
 
         // Load fields
         $childData = [];
-        foreach ($this->getFields() as $field) {
-            // $childData = Arr::prepend($childData, Arr::undot($field->load($entity)));
+        foreach ($this->fields as $field) {
             $childData = array_merge($childData, $field->load($entity));
         }
 
@@ -316,7 +326,7 @@ class GroupElement extends Element
         }
 
         // Fill fields
-        foreach ($this->getFields() as $field) {
+        foreach ($this->fields as $field) {
             $field->fill($entity, $data, $emptyOnNull);
         }
 
