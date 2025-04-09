@@ -134,6 +134,10 @@ class SelectElement extends Element
 
         $data = (array) Arr::get($this->data, $this->getNameKey(), []);
 
+        if (empty($this->options)) {
+            return $this->isMultiselect() ? $data : reset($data);
+        }
+
         // Match values with options
         $validOptions = [];
         foreach ($this->options as $option) {
