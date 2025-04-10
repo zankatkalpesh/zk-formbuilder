@@ -11,7 +11,7 @@
     @if($element['view']) 
         {!! $element['view'] !!}
     @else
-        <div class="frm-view-only type-{{ $element['type'] }}" data-view-only="true">
+        <div class="frm-view-only type-{{ $element['type'] }}" data-view-only="true" data-multiple="{{ $element['multiple'] ? 'true' : 'false' }}">
             <ul class="list-unstyled">
                 @foreach($element['files'] as $file)
                     <li class="file-item">

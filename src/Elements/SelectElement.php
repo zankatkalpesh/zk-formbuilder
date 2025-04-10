@@ -219,7 +219,7 @@ class SelectElement extends Element
 
         // Check is multiselect and add 'multiple' attribute
         if ($this->isMultiselect()) {
-            $attributes[] = 'multiple';
+            $attributes['multiple'] = 'true';
         }
 
         return $attributes;

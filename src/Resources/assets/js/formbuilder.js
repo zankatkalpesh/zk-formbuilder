@@ -140,6 +140,7 @@ export class ZkElement {
             elm = document.createElement('div');
             elm.setAttribute('data-view-only', 'true');
             if (this.field.type === 'file') {
+                elm.setAttribute('data-multiple', (this.field.multiple ? 'true' : 'false'));
                 elm.setAttribute('class', `frm-view-only type-${this.field.type}`);
                 const ulElm = document.createElement('ul');
                 ulElm.setAttribute('class', 'file-list list-unstyled');

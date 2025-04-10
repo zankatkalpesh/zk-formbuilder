@@ -167,7 +167,7 @@ class FileElement extends Element
 
         // Check is multiple and add 'multiple' attribute
         if ($this->isMultiple()) {
-            $attributes[] = 'multiple';
+            $attributes['multiple'] = 'true';
         }
 
         return $attributes;
@@ -260,7 +260,7 @@ class FileElement extends Element
         $storage = Storage::disk($this->getOptions('disk'));
         $path = $this->getOptions('path') . '/';
         if ($this->isMultiple()) {
-            foreach ($oldFiles as $file) {
+            foreach ((array) $oldFiles as $file) {
                 $storage->delete($path . $file);
             }
         } else {
@@ -325,7 +325,7 @@ class FileElement extends Element
             $uploadedFile = '';
             if ($this->isMultiple()) {
                 $uploadedFiles = [];
-                foreach ($files as $file) {
+                foreach ((array) $files as $file) {
                     $uploadedFiles[] = $this->upload($file);
                 }
                 $uploadedFile = array_column($uploadedFiles, 'filename');
@@ -367,7 +367,7 @@ class FileElement extends Element
         $path = $this->getOptions('path') . '/';
         $filesPath = [];
         if ($this->isMultiple()) {
-            foreach ($files as $file) {
+            foreach ((array) $files as $file) {
                 $filesPath[] = $storage->url($path . $file);
             }
         } else {
