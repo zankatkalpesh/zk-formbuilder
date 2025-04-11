@@ -70,6 +70,28 @@ return [
             // 'display' => function ($el, $data) {
             //     dd('display main', $el);
             // },
+            'after' => function ($elm) {
+                if ($elm->hasViewOnly() || empty($elm->getFiles())) {
+                    return null;
+                }
+                $files = [];
+                foreach ($elm->getFiles() as $file) {
+                    $files[] = '<li class="file-item">
+                        <a href="' . $file . '" target="_blank">' . basename($file) . '</a>
+                    </li>';
+                }
+                return '<div class="frm-view-only type-file mt-2" data-view-after="true">
+                            <ul class="list-unstyled">' . implode('', $files) . '</ul>
+                        </div>';
+            },
+        ],
+        'date' => [
+            'modifyValue' => function ($value, $elm) {
+                if ($elm->hasViewOnly()) {
+                    return $value ? date('d-m-Y', strtotime($value)) : null;
+                }
+                return $value ? date('Y-m-d', strtotime($value)) : null;
+            },
         ],
         'hidden' => [
             'wrapper' => [

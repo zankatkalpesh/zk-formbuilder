@@ -266,6 +266,28 @@ interface Form
     public function getKey();
 
     /**
+     * Set meta data
+     * 
+     * @param array $metaData
+     * @return Form
+     */
+    public function setMetaData(array $metaData);
+
+    /**
+     * Get meta data
+     * 
+     * @return array
+     */
+    public function getMetaData(): array;
+
+    /**
+     * Get encrypted meta data
+     * 
+     * @return string | null
+     */
+    public function getEncryptedMetaData();
+
+    /**
      * Save data
      *
      * @return mixed

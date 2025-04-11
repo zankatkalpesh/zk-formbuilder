@@ -23,6 +23,8 @@
     @if ($form['csrf']) @csrf @endunless
     <input type="hidden" name="_form" value="{{ $form['frmKey'] }}"/>
     @if (! in_array($form['method'], ['GET', 'POST'])) @method($form['method']) @endif
+    @if ($form['key']) <input type="hidden" name="_key" value="{{ $form['key'] }}"/> @endunless
+    @if ($form['metaData']) <input type="hidden" name="_metaData" value="{{ $form['metaData'] }}"/> @endunless
 
     {!! $form['before'] !!}
     

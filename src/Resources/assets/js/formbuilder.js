@@ -807,8 +807,8 @@ export default class ZkFormBuilder {
             const value = this.frmObj.attributes[attr];
             this.form.setAttribute(isNaN(attr) ? attr : value, isNaN(attr) ? value : true);
         }
-        // Add Hidden Fields
-        this.addHiddenFields();
+        // Add Form Hidden Fields
+        this.addFormHiddenFields();
         // Form Buttons
         const buttons = this.createElementInstance(this.frmObj.buttons, this);
         // Form Buttons - Top
@@ -981,12 +981,14 @@ export default class ZkFormBuilder {
         });
     }
 
-    addHiddenFields() {
+    addFormHiddenFields() {
         if (this.frmObj.csrf) this.addHiddenField('_token', this.frmObj.csrf_token);
         if (this.frmObj.frmKey) this.addHiddenField('_form', this.frmObj.frmKey);
         if (!['GET', 'POST'].includes(this.frmObj.method)) {
             this.addHiddenField('_method', this.frmObj.method);
         }
+        if (this.frmObj.key) this.addHiddenField('_key', this.frmObj.key);
+        if (this.frmObj.metaData) this.addHiddenField('_metaData', this.frmObj.metaData);
     }
 
     addHiddenField(name, value, attributes = {}) {

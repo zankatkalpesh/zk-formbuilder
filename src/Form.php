@@ -988,6 +988,15 @@ class Form
 		return $this->metaData;
 	}
 
+	/**
+	 * Get encrypted meta data
+	 * 
+	 * @return string | null
+	 */
+	public function getEncryptedMetaData()
+	{
+		return (!empty($this->metaData)) ? encrypt($this->metaData) : null;
+	}
 
 	/**
 	 * Save data
@@ -1045,6 +1054,7 @@ class Form
 		$this->output = [
 			'prefix' => $this->getPrefix(),
 			'key' => $this->getKey(),
+			'metaData' => $this->getEncryptedMetaData(),
 			'frmKey' => $this->getFormKey(),
 			'action' => $this->getAction(),
 			'method' => $this->getMethod(),
