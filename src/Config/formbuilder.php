@@ -14,7 +14,6 @@ return [
         'wrapper' => [],
         'buttons' => [
             'wrapper' => [
-                'tag' => 'div',
                 'class' => 'my-3 d-flex justify-content-end',
             ],
             'actions' => [
@@ -125,11 +124,9 @@ return [
         ],
         'group' => [
             'wrapper' => [
-                'tag' => 'div',
                 'class' => 'col-md-12 mb-3 card d-block form-group group-{name}',
             ],
             'fieldWrapper' => [
-                'tag' => 'div',
                 'class' => 'form-group-fields row px-2'
             ],
             'label' => [
@@ -161,19 +158,16 @@ return [
                 ],
             ],
             'rowWrapper' => [
-                'tag' => 'div',
                 'class' => 'mb-3 form-multiple-row row',
                 'attributes' => [
                     'data-row-prefix' => '{rowPrefix}',
                 ],
             ],
             'fieldWrapper' => [
-                'tag' => [
-                    'class' => 'form-multiple-fields col-md-11',
-                    'tag' => [
-                        'class' => 'row',
-                    ]
-                ]
+                'class' => 'form-multiple-fields col-md-11',
+                'children' => [
+                    'class' => 'row',
+                ],
             ],
             'action' => [
                 'add' => [
@@ -209,7 +203,6 @@ return [
                 ]
             ],
             'wrapper' => [
-                'tag' => 'div',
                 'class' => 'form-tab tab-{name}',
             ],
             'tabWrapper' => [
@@ -218,30 +211,26 @@ return [
             ],
             'itemWrapper' => [
                 'activeClass' => 'active',
-                'tag' => [
-                    'name' => 'li',
-                    'class' => 'nav-item',
+                'tag' => 'li',
+                'class' => 'nav-item',
+                'attributes' => [
+                    'role' => 'presentation'
+                ],
+                'children' => [
+                    'tag' => 'a',
+                    'class' => 'nav-link {activeClass}',
                     'attributes' => [
-                        'role' => 'presentation'
+                        'href' => '#{id}-{tabKey}',
+                        'id' => 'tab-{id}-{tabKey}',
+                        'data-bs-toggle="tab" data-bs-target="#{id}-{tabKey}-tab-pane"'
                     ],
-                    'tag' => [
-                        'name' => 'a',
-                        'class' => 'nav-link {activeClass}',
-                        'attributes' => [
-                            'href' => '#{id}-{tabKey}',
-                            'id' => 'tab-{id}-{tabKey}',
-                            'data-bs-toggle="tab" data-bs-target="#{id}-{tabKey}-tab-pane"'
-                        ],
-                    ]
                 ]
             ],
             'contentWrapper' => [
-                'tag' => 'div',
                 'class' => 'tab-content'
             ],
             'panelWrapper' => [
                 'activeClass' => 'active show',
-                'tag' => 'div',
                 'class' => 'tab-pane fade {activeClass}',
                 'attributes' => [
                     'id' => '{id}-{tabKey}-tab-pane',

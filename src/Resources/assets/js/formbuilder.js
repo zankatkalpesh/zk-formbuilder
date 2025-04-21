@@ -669,11 +669,11 @@ export default class ZkFormBuilder {
         this.setOptions(options);
         this.setValidatorObj(
             typeof ZkFormValidator !== "undefined" && ZkFormValidator ||
-            window?.ZkFormValidator ||
-            window?.ZkValidator?.ZkFormValidator ||
+            (typeof window !== "undefined" && window?.ZkFormValidator) ||
+            (typeof window !== "undefined" && window?.ZkValidator?.ZkFormValidator) ||
             null
         );
-        this.context = document.createDocumentFragment();
+        this.context = typeof document !== "undefined" && document.createDocumentFragment();
     }
 
     /**
@@ -781,6 +781,11 @@ export default class ZkFormBuilder {
 
         // Free up memory
         this.frmObj = null;
+
+        // top scroll
+        // if (this.frmContainer.scrollIntoView) {
+        //     this.frmContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // }
     }
 
     buildForm() {

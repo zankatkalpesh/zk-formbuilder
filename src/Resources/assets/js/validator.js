@@ -801,6 +801,17 @@ export class ZkFormValidator {
     this.registerFieldEvents(element, rules, messages);
   }
 
+  addFields(fields) {
+    for (const name in fields) {
+      const field = fields[name];
+      if (field.rules) {
+        this.addField(name, field.rules, field.messages ?? {});
+      } else {
+        this.addField(name, field);
+      }
+    }
+  }
+
   removeContextFields(context) {
     context.querySelectorAll("input, select, textarea").forEach((element) => {
       this.removeField(element.name);
@@ -878,6 +889,34 @@ export class ZkFormValidator {
 
     return this.isValid;
   }
+
+  async onlyValidate(fields) {
+    this.clearErrors();
+    this.validator.errors = {};
+    this.isValid = true;
+    for (const name of fields) {
+      const field = this.validator.fields[name];
+      const element = this.getElement(name);
+      if (element) {
+        const isValidField = await this.validateField(
+          element,
+          field.rules || field,
+          field.messages || {}
+        );
+        if (!isValidField) this.isValid = false;
+      }
+    }
+
+    if (!this.isValid) {
+      const focusElement = this.form.querySelector(
+        `.${this.options.input.errorClass}`
+      );
+      if (focusElement) focusElement.focus();
+    }
+
+    return this.isValid;
+  }
+
 
   isInvalid() {
     return !this.isValid;
@@ -1078,6 +1117,17 @@ export default class ZkValidator {
     this.fields[name] = { rules, messages };
   }
 
+  addFields(fields) {
+    for (const name in fields) {
+      const field = fields[name];
+      if (field.rules) {
+        this.addField(name, field.rules, field.messages ?? {});
+      } else {
+        this.addField(name, field);
+      }
+    }
+  }
+
   removeField(name) {
     if (this.fields[name]) delete this.fields[name];
   }
@@ -1128,6 +1178,23 @@ export default class ZkValidator {
       const element = this.getElement(name);
       if (!element) continue;
       const field = _fields[name];
+      const fieldValid = await this.validateField(
+        element,
+        field.rules || field,
+        field.messages || {}
+      );
+      if (!fieldValid) isValid = false;
+    }
+    return isValid;
+  }
+
+  async onlyValidate(fields) {
+    this.errors = {};
+    let isValid = true;
+    for (const name of fields) {
+      const element = this.getElement(name);
+      if (!element) continue;
+      const field = this.fields[name];
       const fieldValid = await this.validateField(
         element,
         field.rules || field,

@@ -109,35 +109,11 @@ class WrapperBuilder
         if (empty($this->data)) {
             return $output;
         }
-        // Build the wrapper
-        $this->buildWrapper($this->data, $output);
+        // Build wrapper tag
+        $this->buildTag($this->data, $output);
 
         // Return the output
         return $output;
-    }
-
-    /**
-     * Build the wrapper
-     *
-     * @param array $data
-     * @param array $output
-     * @return void
-     */
-    private function buildWrapper(array $data, array &$output)
-    {
-        if (!isset($data['tag'])) {
-            $data['tag'] = $data['name'] ?? $this->tag;
-        }
-        // Check if the tag is an array
-        if (is_array($data['tag'])) {
-            // Build the tag
-            $this->buildTag($data['tag'], $output);
-        } else {
-            // Build the tag
-            $data['name'] = $data['tag'];
-            unset($data['tag']);
-            $this->buildTag($data, $output);
-        }
     }
 
     /**
@@ -149,8 +125,8 @@ class WrapperBuilder
      */
     private function buildTag(array $tagData, array &$output)
     {
-        if (!isset($tagData['name'])) {
-            $tagData['name'] = $this->tag;
+        if (!isset($tagData['tag'])) {
+            $tagData['tag'] = $this->tag;
         }
 
         $attributes = [];
@@ -159,7 +135,7 @@ class WrapperBuilder
             $attributes[] = 'class="' . $tagData['class'] . '"';
         }
         // Extract other attributes here
-        if (isset($tagData['attributes'])) {
+        if (!empty($tagData['attributes'])) {
             if (is_array($tagData['attributes'])) {
                 foreach ($tagData['attributes'] as $key => $value) {
                     $attributes[] = (is_numeric($key)) ? trim((string) $value) : $key . '="' . trim((string) $value) . '"';
@@ -187,13 +163,13 @@ class WrapperBuilder
 
         // Build the tag
         $output[] = [
-            'tag' => $tagData['name'],
+            'tag' => $tagData['tag'],
             'before' => $tagData['before'] ?? '',
             'after' => $tagData['after'] ?? '',
             'attributes' => $attributes,
         ];
-        if (isset($tagData['tag'])) {
-            $this->buildTag($tagData['tag'], $output);
+        if (isset($tagData['children'])) {
+            $this->buildTag($tagData['children'], $output);
         }
     }
 }
