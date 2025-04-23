@@ -80,10 +80,15 @@ class MultipleElement extends Element
     ) {
         parent::__construct($field, $parent, $properties, $configPath, $elementFactory, $wrapperBuilder);
 
+        $this->field['minMsg'] = $this->field['minMsg'] ?? ($this->getMin() > 1 ? 'Minimum {min} rows are required' : 'At least one row is required.');
+        $this->field['maxMsg'] = $this->field['maxMsg'] ?? 'Maximum {max} rows are allowed';
+
         $this->setReplaceData([
             '{prefix}' => $this->getPrefix(),
             '{minRow}' => $this->getMin(),
             '{maxRow}' => $this->getMax(),
+            '{minMsg}' => $this->field['minMsg'],
+            '{maxMsg}' => $this->field['maxMsg'],
         ]);
 
         $this->setRows();
@@ -144,7 +149,7 @@ class MultipleElement extends Element
      */
     public function getMin()
     {
-        return $this->field['min'] ?? 1;
+        return (int) ($this->field['min'] ?? 1);
     }
 
     /**
@@ -154,7 +159,7 @@ class MultipleElement extends Element
      */
     public function getMax()
     {
-        return $this->field['max'] ?? false;
+        return (int) ($this->field['max'] ?? 0);
     }
 
     /**
@@ -311,6 +316,16 @@ class MultipleElement extends Element
         $replaceData = $this->getReplaceData();
         $replaceData['{rowKey}'] = $row['name'];
         $replaceData['{rowPrefix}'] = $row['rowPrefix'];
+
+        $defaltAttr = [
+            'data-action' => 'remove-row',
+            'data-row-key' => '{rowKey}',
+            'data-container-prefix' => '{prefix}',
+            'data-remove-prefix' => '{rowPrefix}',
+            'data-min-row' => '{minRow}',
+            'data-min-msg' => '{minMsg}'
+        ];
+        $action['attributes'] = array_merge($defaltAttr, $action['attributes']);
 
         $attributes = $this->replacePattern($action['attributes'], $replaceData);
 
@@ -656,6 +671,14 @@ class MultipleElement extends Element
 
         $replaceData = $this->getReplaceData();
 
+        $defaltAttr = [
+            'data-container-prefix' => '{prefix}',
+            'data-action' => 'add-row',
+            'data-max-row' => '{maxRow}',
+            'data-max-msg' => '{maxMsg}',
+        ];
+        $action['attributes'] = array_merge($defaltAttr, $action['attributes']);
+
         $attributes = $this->replacePattern($action['attributes'], $replaceData);
 
         $wBuilder = clone $this->wrapperBuilder;
@@ -688,7 +711,9 @@ class MultipleElement extends Element
         return [
             'prefix' => $this->getPrefix(),
             'min' => $this->getMin(),
+            'minMsg' => $this->field['minMsg'],
             'max' => $this->getMax(),
+            'maxMsg' => $this->field['maxMsg'],
             'type' => $this->getType(),
             'name' => $this->getName(),
             'id' => $this->getId(),

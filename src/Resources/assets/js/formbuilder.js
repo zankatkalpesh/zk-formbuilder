@@ -909,18 +909,33 @@ export default class ZkFormBuilder {
     }
 
     addMoreEvent(addElement, container = null, rowObject = null, jsElement = null) {
-        const _container = container || addElement.getAttribute('data-add-prefix');
+        const _container = container || addElement.getAttribute('data-container-prefix');
         let _rowObject = rowObject || addElement.getAttribute('data-row-object');
         if (typeof _rowObject === 'string') _rowObject = JSON.parse(_rowObject);
         const _jsElement = jsElement || (_rowObject?.jsElement || addElement.getAttribute('data-js-element'));
 
         if (!_jsElement || !_container || !_rowObject) return;
 
-        const context = this.form.querySelector(`[data-prefix="${_container}"]`);
+        const context = this.form.querySelector(`[data-content-prefix="${_container}"]`);
         if (!context) return;
+
+        const max = Number(_rowObject.max || addElement.getAttribute('data-max-row') || 0);
+        const maxMsg = (
+            _rowObject.maxMsg ||
+            addElement.getAttribute('data-max-msg') ||
+            'Maximum {max} rows are allowed.'
+        ).replaceAll('{max}', max);
 
         const listener = this.debounce((event) => {
             event.preventDefault();
+            const rowCount = context.querySelectorAll(`[data-row-prefix]`).length;
+            if (max !== 0 && rowCount === max) {
+                this.dispatch('maxRowError', { _container, rowCount, max, message: maxMsg });
+                if (!this.subscribers['maxRowError']) {
+                    alert(maxMsg);
+                }
+                return;
+            }
             const element = this.createElementInstance({ jsElement: _jsElement });
             if (element) {
                 const rowName = _rowObject.name;
@@ -958,17 +973,36 @@ export default class ZkFormBuilder {
         addElement.addEventListener('click', listener);
     }
 
-    addRemoveEvent(removeElement, container = null) {
-        const _container = container || removeElement.getAttribute('data-remove-prefix');
-        if (!_container) return;
+    addRemoveEvent(removeElement, rowPrefix = null, container = null) {
+        const _rowPrefix = rowPrefix || removeElement.getAttribute('data-remove-prefix');
+        if (!_rowPrefix) return;
+
+        const _container = container || removeElement.getAttribute('data-container-prefix');
+        const context = this.form.querySelector(`[data-content-prefix="${_container}"]`);
+        if (!context) return;
+
+        const min = Number(removeElement.getAttribute('data-min-row') || 0);
+        const minMsg = (
+            removeElement.getAttribute('data-min-msg') ||
+            (min > 1 ? 'Minimum {min} rows are required.' : 'At least one row is required.')
+        ).replaceAll('{min}', min);
 
         const listener = this.debounce((event) => {
             event.preventDefault();
-            const context = this.form.querySelector(`[data-row-prefix="${_container}"]`);
-            if (!context) return;
-            this.validator.removeContextFields(context);
-            this.dispatch('removeRow', { _container: _container, context: context });
-            context.remove();
+            const rowContext = context.querySelector(`[data-row-prefix="${_rowPrefix}"]`);
+            if (!rowContext) return;
+
+            const rowCount = context.querySelectorAll(`[data-row-prefix]`).length;
+            if (min !== 0 && rowCount === min) {
+                this.dispatch('minRowError', { _container, _rowPrefix, context: rowContext, rowCount, min, message: minMsg });
+                if (!this.subscribers['minRowError']) {
+                    alert(minMsg);
+                }
+                return;
+            }
+            this.validator.removeContextFields(rowContext);
+            this.dispatch('removeRow', { _container, _rowPrefix, context: rowContext });
+            rowContext.remove();
         }, 100);
 
         removeElement.removeEventListener('click', listener);
