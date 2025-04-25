@@ -504,8 +504,12 @@ export class ZkMultipleActionElement {
         if (this.action.rowObject) {
             elm.setAttribute('data-row-object', JSON.stringify(this.action.rowObject));
         }
+        // Action Before Text
+        elm.appendChild(this.formBuilder.stringToHTML(this.action.before || ''));
         // Action Text
-        elm.appendChild(this.formBuilder.stringToHTML(this.action.label || ''));
+        elm.appendChild(this.formBuilder.stringToHTML(this.action.text));
+        // Action After Text
+        elm.appendChild(this.formBuilder.stringToHTML(this.action.after || ''));
 
         // Append Action to Context
         wrapper.appendChild(elm);

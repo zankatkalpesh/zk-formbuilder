@@ -305,13 +305,7 @@ class MultipleElement extends Element
 
     public function getRowRemoveAction($row)
     {
-        $action = $this->getConfigByKey('action.remove') ?? [];
-        $action['show'] = $action['show'] ?? ($this->getConfigByKey('action.remove.show') ?? true);
-        $action['tag'] = $action['tag'] ?? ($this->getConfigByKey('action.remove.tag') ?? 'button');
-        $action['attributes'] = $action['attributes'] ?? ($this->getConfigByKey('action.remove.attributes') ?? []);
-        $action['label'] = $action['label'] ?? ($this->getConfigByKey('action.remove.label') ?? 'Remove');
-        $action['position'] = $action['position'] ?? ($this->getConfigByKey('action.remove.position') ?? 'after');
-        $action['wrapper'] = $action['wrapper'] ?? ($this->getConfigByKey('action.remove.wrapper') ?? []);
+        $action = $this->fetchAction('remove');
 
         $replaceData = $this->getReplaceData();
         $replaceData['{rowKey}'] = $row['name'];
@@ -325,26 +319,18 @@ class MultipleElement extends Element
             'data-min-row' => '{minRow}',
             'data-min-msg' => '{minMsg}'
         ];
-        $action['attributes'] = array_merge($defaltAttr, $action['attributes']);
-
-        $attributes = $this->replacePattern($action['attributes'], $replaceData);
+        $action['attributes'] = $this->replacePattern(array_merge($defaltAttr, $action['attributes']), $replaceData);
 
         $wBuilder = clone $this->wrapperBuilder;
-        $wrapper = $wBuilder
+        $action['wrapper'] = $wBuilder
             ->replace($replaceData)
             ->set($action['wrapper'])
             ->build();
 
         return [
-            'show' => $action['show'],
-            'tag' => $action['tag'],
-            'attributes' => $attributes,
-            'position' => $action['position'],
-            'label' => $action['label'],
-            'wrapper' => $wrapper,
             'jsElement' => $this->getJsActionElement(),
             'component' => $this->getActionComponent(),
-        ];
+        ] + $action;
     }
 
     /**
@@ -556,6 +542,7 @@ class MultipleElement extends Element
     public function getNewRowObject($side = 'frontend')
     {
         if ($this->newRowObject) return $this->newRowObject;
+
         $row = $this->makeRowFields('{{index}}');
         // Set invalid row
         $row['invalid'] = false;
@@ -659,15 +646,37 @@ class MultipleElement extends Element
         $entity->setRawAttributes($newAttributes);
     }
 
+    private function fetchAction($name = 'add')
+    {
+        $action = $this->getConfigByKey('action.' . $name) ?? [];
+        $defultKeys = [
+            'show' => true,
+            'tag' => 'button',
+            'attributes' => [],
+            'text' => 'Add More',
+            'position' => 'before',
+            'wrapper' => [],
+            'before' => '',
+            'after' => '',
+        ];
+        foreach ($defultKeys as $key => $value) {
+            $action[$key] = $action[$key] ?? ($this->getConfigByKey('action.' . $name . '.' . $key) ?? $value);
+        }
+        $action['before'] = $action['before'] ?? ($this->getConfigByKey('before') ?? '');
+        if (is_callable($action['before'])) {
+            $action['before'] = call_user_func($action['before'], $this);
+        }
+        $action['after'] = $action['after'] ?? ($this->getConfigByKey('after') ?? '');
+        if (is_callable($action['after'])) {
+            $action['after'] = call_user_func($action['after'], $this);
+        }
+
+        return $action;
+    }
+
     public function getAddAction()
     {
-        $action = $this->getConfigByKey('action.add') ?? [];
-        $action['show'] = $action['show'] ?? ($this->getConfigByKey('action.add.show') ?? true);
-        $action['tag'] = $action['tag'] ?? ($this->getConfigByKey('action.add.tag') ?? 'button');
-        $action['attributes'] = $action['attributes'] ?? ($this->getConfigByKey('action.add.attributes') ?? []);
-        $action['label'] = $action['label'] ?? ($this->getConfigByKey('action.add.label') ?? 'Add');
-        $action['position'] = $action['position'] ?? ($this->getConfigByKey('action.add.position') ?? 'before');
-        $action['wrapper'] = $action['wrapper'] ?? ($this->getConfigByKey('action.add.wrapper') ?? []);
+        $action = $this->fetchAction('add');
 
         $replaceData = $this->getReplaceData();
 
@@ -677,27 +686,19 @@ class MultipleElement extends Element
             'data-max-row' => '{maxRow}',
             'data-max-msg' => '{maxMsg}',
         ];
-        $action['attributes'] = array_merge($defaltAttr, $action['attributes']);
-
-        $attributes = $this->replacePattern($action['attributes'], $replaceData);
+        $action['attributes'] = $this->replacePattern(array_merge($defaltAttr, $action['attributes']), $replaceData);
 
         $wBuilder = clone $this->wrapperBuilder;
-        $wrapper = $wBuilder
+        $action['wrapper'] = $wBuilder
             ->replace($replaceData)
             ->set($action['wrapper'])
             ->build();
 
         return [
-            'show' => $action['show'],
-            'tag' => $action['tag'],
-            'attributes' => $attributes,
-            'position' => $action['position'],
-            'label' => $action['label'],
-            'wrapper' => $wrapper,
             'jsElement' => $this->getJsActionElement(),
             'component' => $this->getActionComponent(),
             'rowObject' => $this->getNewRowObject('frontend'),
-        ];
+        ] + $action;
     }
 
     /**

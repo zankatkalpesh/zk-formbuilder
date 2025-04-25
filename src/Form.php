@@ -543,6 +543,10 @@ class Form
 			}
 		}
 
+		if ($this->buttons === false) {
+			return false;
+		}
+
 		if ($this->buttons != null && !isset($this->buttons['actions'])) {
 			$this->buttons = ['actions' => $this->buttons];
 		}
@@ -1061,7 +1065,7 @@ class Form
 			'fields' => $this->getFieldsToArray($side),
 			'wrapper' => $this->getWrapper(),
 			'attributes' => $this->getAttributes(),
-			'buttons' => $this->getButtons()->toArray(),
+			'buttons' => $this->getButtons() ? $this->getButtons()->toArray() : false,
 			'messages' => $this->getMessages(),
 			'validated' => $this->isValidated(),
 			'invalid' => $this->isInvalid(),
