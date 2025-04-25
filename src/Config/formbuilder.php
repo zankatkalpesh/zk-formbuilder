@@ -175,21 +175,18 @@ return [
                     'attributes' => [
                         'class' => 'btn btn-primary btn-md ms-2',
                         'type' => 'button',
-                        'data-add-prefix' => '{prefix}',
-                        'data-action' => 'add-row',
                     ],
-                    'label' => 'Add',
+                    'text' => '',
+                    'before' => '<i class="bi bi-plus-circle"></i>',
                 ],
                 'remove' => [
                     'position' => 'after',
                     'attributes' => [
                         'class' => 'btn btn-danger btn-md',
                         'type' => 'button',
-                        'data-action' => 'remove-row',
-                        'data-row-key' => '{rowKey}',
-                        'data-remove-prefix' => '{rowPrefix}',
                     ],
-                    'label' => '<i class="fas fa-trash"></i>',
+                    'text' => '',
+                    'before' => '<i class="bi bi-trash"></i>',
                     'wrapper' => [
                         'class' => 'form-multiple-remove col-md-1 text-md-center',
                     ]
