@@ -1,75 +1,34 @@
-export const ZkValidatorMessages = {
-  // Add your custom validator message, if it exists, it will be overridden
-  addMessage: function (name, message) {
-    if (typeof name === "string" && typeof message === "string") {
-      this[name] = message; // 'this' refers to ZkValidatorMessages
+export const ZkValidatorUtils = {
+  // Check if the value is empty
+  isEmpty(value) {
+    return value === null || value === undefined || value.trim() === "";
+  },
+  // Check if the value is a number
+  isNumber(value) {
+    return !isNaN(value) && !isNaN(parseFloat(value));
+  },
+  // Condition Checking
+  checkCondition(matchValue, operator, value) {
+    switch (operator) {
+      case "=":
+        return matchValue == value;
+      case "==":
+        return matchValue === value;
+      case "!=":
+        return matchValue != value;
+      case ">":
+        return matchValue > value;
+      case "<":
+        return matchValue < value;
+      case ">=":
+        return matchValue >= value;
+      case "<=":
+        return matchValue <= value;
+      default:
+        return false;
     }
   },
-  addMessages: function (messages) {
-    if (typeof messages === "object" && messages !== null) {
-      for (const [name, message] of Object.entries(messages)) {
-        this.addMessage(name, message); // Using Object.entries for cleaner iteration
-      }
-    }
-  },
-  required: "This field is required.",
-  requiredIf: "This field is required.",
-  email: "Invalid email address.",
-  numeric: "This field must be numeric.",
-  integer: "This field must be an integer.",
-  alpha: "This field must be alphabetic.",
-  alphaNumeric: "This field must be alphanumeric.",
-  alphaDash: "This field may only contain letters, numbers, and dashes.",
-  url: "This field is not a valid URL.",
-  date: "This field is not a valid date.",
-  dateFormat: "This field does not match the format :format.",
-  dateBefore: "This field must be a date before :date.",
-  dateAfter: "This field must be a date after :date.",
-  contains: "This field must contain :contains.",
-  boolean: "This field must be true or false.",
-  minlength: "This field must be at least :length characters.",
-  maxlength: "This field may not be greater than :length characters.",
-  startsWith: "This field must start with :prefix.",
-  endsWith: "This field must end with :suffix.",
-  in: "This field must be one of the following: :values.",
-  notIn: "This field must not be one of the following: :values.",
-  match: "This field must match the field :field.",
-  pattern: "This field format is invalid.",
-  regex: "This field format is invalid.",
-  min: "This field must be greater than or equal to :min.",
-  max: "This field must be less than or equal to :max.",
-  between: "This field must be between :min and :max.",
-  size: "This file size must be equal to :size.",
-  minSize: "This file size must be greater than or equal to :size.",
-  maxSize: "This file size must be less than or equal to :size.",
-  betweenSize: "This file size must be between :min and :max.",
-  mimes: "This field must have a valid file :values.",
-  unique: "This field must be unique.",
-};
-
-export const ZkValidatorRules = {
-  // Add your custom validator rule, if it exists, it will be overridden
-  addRule(name, handler, message) {
-    if (typeof name === "string" && typeof handler === "function") {
-      this[name] = { handler, message };
-    }
-  },
-  addRules(rules) {
-    if (typeof rules === "object" && rules !== null) {
-      for (const [name, rule] of Object.entries(rules)) {
-        this.addRule(name, rule.handler, rule.message);
-      }
-    }
-  },
-  // Dispatch custom events
-  dispatchCustomEvent(element, eventName, detail = {}) {
-    const event = new CustomEvent(eventName, {
-      bubbles: true,
-      cancelable: true,
-      detail,
-    });
-    element.dispatchEvent(event);
-  },
+  // Valid MIME types
   validMimeTypes: {
     // Get valid mime types for the specified file extension
     pdf: "application/pdf",
@@ -125,10 +84,145 @@ export const ZkValidatorRules = {
     // xml: "application/xml",
     csv: "text/csv",
   },
+  // Dispatch custom events
+  dispatchCustomEvent(element, eventName, detail = {}) {
+    const event = new CustomEvent(eventName, {
+      bubbles: true,
+      cancelable: true,
+      detail,
+    });
+    element.dispatchEvent(event);
+  },
+  // Get the comparison date based on the input date and format
+  getComparisonDate(date, format = "YYYY-MM-DD") {
+    const now = new Date();
+    switch (date.toLowerCase()) {
+      case 'today':
+        return new Date(now.setHours(0, 0, 0, 0)); // Today at 00:00:00
+      case 'tomorrow':
+        return new Date(now.setDate(now.getDate() + 1)); // Tomorrow at 00:00:00
+      case 'week':
+        return new Date(now.setDate(now.getDate() + 7)); // One week from now at 00:00:00
+      default:
+        // Parse the default date according to the format
+        return ZkValidatorUtils.parseDate(date, format);
+    }
+  },
+  parseDate(dateStr, format) {
+    const lowerFormat = format.toLowerCase();
+    const regex = {
+      'yyyy-mm-dd': /^(\d{4})[-](\d{2})[-](\d{2})$/,
+      'yyyy/mm/dd': /^(\d{4})[\/](\d{2})[\/](\d{2})$/,
+      'dd-mm-yyyy': /^(\d{2})[-](\d{2})[-](\d{4})$/,
+      'dd/mm/yyyy': /^(\d{2})[\/](\d{2})[\/](\d{4})$/,
+      'mm-dd-yyyy': /^(\d{2})[-](\d{2})[-](\d{4})$/,
+      'mm/dd/yyyy': /^(\d{2})[\/](\d{2})[\/](\d{4})$/
+    };
+
+    const formatRegex = regex[lowerFormat];
+    if (!formatRegex) return null; // If the format is not supported, return null
+
+    const match = dateStr.match(formatRegex);
+    if (!match) return null; // If input doesn't match the regex, return null
+
+    let [_, part1, part2, part3] = match;
+    let year, month, day;
+
+    if (lowerFormat === 'yyyy-mm-dd' || lowerFormat === 'yyyy/mm/dd') {
+      year = part1;
+      month = part2;
+      day = part3;
+    } else if (lowerFormat === 'dd-mm-yyyy' || lowerFormat === 'dd/mm/yyyy') {
+      year = part3;
+      month = part2;
+      day = part1;
+    } else if (lowerFormat === 'mm-dd-yyyy' || lowerFormat === 'mm/dd/yyyy') {
+      year = part3;
+      month = part1;
+      day = part2;
+    }
+
+    // Return the constructed date object
+    return {
+      year: parseInt(year),
+      month: parseInt(month),
+      day: parseInt(day),
+      date: new Date(year, month - 1, day),
+    }
+  }
+};
+
+export const ZkValidatorMessages = {
+  // Add your custom validator message, if it exists, it will be overridden
+  addMessage: function (name, message) {
+    if (typeof name === "string" && typeof message === "string") {
+      this[name] = message; // 'this' refers to ZkValidatorMessages
+    }
+  },
+  addMessages: function (messages) {
+    if (typeof messages === "object" && messages !== null) {
+      for (const [name, message] of Object.entries(messages)) {
+        this.addMessage(name, message); // Using Object.entries for cleaner iteration
+      }
+    }
+  },
+  // Default messages
+  nullable: "This field must be null.",
+  required: "This field is required.",
+  required_if: "This field is required when :field is :value.",
+  email: "Invalid email address.",
+  numeric: "This field must be numeric.",
+  integer: "This field must be an integer.",
+  alpha: "This field must be alphabetic.",
+  alpha_num: "This field must be alphanumeric.",
+  alpha_dash: "This field may only contain letters, numbers, and dashes.",
+  url: "This field is not a valid URL.",
+  date: "This field is not a valid date.",
+  date_before: "This field must be a date before :date.",
+  date_after: "This field must be a date after :date.",
+  date_format: "This field must be a date in the format :format.",
+  contains: "This field must contain :contains.",
+  boolean: "This field must be true or false.",
+  minlength: "This field must be at least :length characters.",
+  maxlength: "This field may not be greater than :length characters.",
+  starts_with: "This field must start with :prefix.",
+  ends_with: "This field must end with :suffix.",
+  in: "This field must be one of the following: :values.",
+  not_in: "This field must not be one of the following: :values.",
+  match: "This field must match the field :field.",
+  pattern: "This field format is invalid.",
+  regex: "This field format is invalid.",
+  not_regex: "This field format is invalid.",
+  min: "This field must be greater than or equal to :min.",
+  max: "This field must be less than or equal to :max.",
+  between: "This field must be between :min and :max.",
+  size: "This file size must be equal to :size.",
+  min_size: "This file size must be greater than or equal to :size.",
+  max_size: "This file size must be less than or equal to :size.",
+  between_size: "This file size must be between :min and :max.",
+  mimes: "This field must have a valid file :values.",
+  unique: "This field must be unique.",
+};
+
+export const ZkValidatorRules = {
+  // Add your custom validator rule, if it exists, it will be overridden
+  addRule(name, handler, message) {
+    if (typeof name === "string" && typeof handler === "function") {
+      this[name] = { handler, message };
+    }
+  },
+  addRules(rules) {
+    if (typeof rules === "object" && rules !== null) {
+      for (const [name, rule] of Object.entries(rules)) {
+        this.addRule(name, rule.handler, rule.message);
+      }
+    }
+  },
+  // Default rules
   nullable: {
     handler: function (element) {
       // Check if value is empty or null
-      return true;
+      return element.value === null || element.value === undefined || element.value.trim() === '';
     },
     message: function (element, message = "") {
       return message;
@@ -156,8 +250,13 @@ export const ZkValidatorRules = {
       return message || ZkValidatorMessages.required;
     },
   },
-  requiredIf: {
+  required_if: {
     handler: function (element, field, value) {
+      // Check operator include =, !=, >, <, >=, and <=
+      if (operator && !["=", "==", "!=", ">", "<", ">=", "<="].includes(operator)) {
+        value = operator;
+        operator = "=";
+      }
       const _self = ZkValidatorRules;
       const matchField =
         document.getElementById(field) ||
@@ -169,24 +268,40 @@ export const ZkValidatorRules = {
       // Check checkbox, radio, select and other input types
       if (["checkbox", "radio"].includes(matchField.type)) {
         const inputs = document.getElementsByName(matchField.name);
-        isRequired = Array.from(inputs).some((input) => input.checked && input.value.trim() == value);
+        isRequired = Array.from(inputs).some(
+          (input) => input.checked && ZkValidatorUtils.checkCondition(input.value, operator, value)
+        );
       } else if (matchField.type === "file") {
         isRequired = matchField.files.length > 0;
       } else if (matchField.tagName === "SELECT") {
         // Check multiple select and check if at least one option is selected and value is not empty
         isRequired = Array.from(matchField.options).some(
-          (option) => option.selected && option.value.trim() == value
+          (option) => option.selected && ZkValidatorUtils.checkCondition(option.value.trim(), operator, value)
         );
       } else {
-        isRequired = ((value === "" || value === undefined || value === null) && matchField.value.trim() !== "");
-        if (value !== "" && matchField.value.trim() === value) {
+        isRequired =
+          (value === "" || value === undefined || value === null) &&
+          matchField.value.trim() !== "";
+        if (value !== "" && ZkValidatorUtils.checkCondition(matchField.value.trim(), operator, value)) {
           isRequired = true;
         }
       }
       return isRequired ? _self.required.handler(element) : true;
     },
     message: function (element, message = "", field, value) {
-      return message || ZkValidatorMessages.requiredIf;
+      const matchField =
+        document.getElementById(field) ||
+        document.querySelector(`[name="${field}"]`);
+      if (matchField) {
+        // get label text
+        const label = matchField.closest("label");
+        if (label) {
+          field = label.innerText;
+        } else {
+          field = matchField.name;
+        }
+      }
+      return message || ZkValidatorMessages.required_if.replace(":field", field).replace(":value", value);
     },
   },
   email: {
@@ -230,7 +345,7 @@ export const ZkValidatorRules = {
       return message || ZkValidatorMessages.alpha;
     },
   },
-  alphaNumeric: {
+  alpha_num: {
     handler: function (element) {
       // Check if value is empty or match alphanumeric pattern
       return (
@@ -238,10 +353,10 @@ export const ZkValidatorRules = {
       );
     },
     message: function (element, message = "") {
-      return message || ZkValidatorMessages.alphaNumeric;
+      return message || ZkValidatorMessages.alpha_num;
     },
   },
-  alphaDash: {
+  alpha_dash: {
     handler: function (element) {
       // Check if value is empty or match alpha dash pattern
       return (
@@ -249,61 +364,111 @@ export const ZkValidatorRules = {
       );
     },
     message: function (element, message = "") {
-      return message || ZkValidatorMessages.alphaDash;
+      return message || ZkValidatorMessages.alpha_dash;
     },
   },
   url: {
     handler: function (element) {
-      // Check if value is empty or match url pattern
-      return (
-        element.value.trim() === "" ||
-        element.value.match(/^(http|https):\/\/[a-zA-Z0-9-\.]+\.[a-z]{2,4}/)
-      );
+      try {
+        new URL(element.value.trim());
+        return true;
+      } catch {
+        if (element.value.trim() === "") return true;
+        return false;
+      }
     },
     message: function (element, message = "") {
       return message || ZkValidatorMessages.url;
     },
   },
   date: {
-    handler: function (element) {
-      // Check if value is empty or match date pattern
-      return (
-        element.value.trim() === "" ||
-        element.value.match(/^\d{4}-\d{2}-\d{2}$/)
-      );
+    handler: function (element, format = "YYYY-MM-DD") {
+      const value = element.value.trim();
+      if (!value) return false;
+      // Check format is true or not
+      format = format === "true" ? "YYYY-MM-DD" : format;
+
+      const parseDate = ZkValidatorUtils.parseDate(value, format);
+      if (!parseDate || isNaN(parseDate.date.getTime())) return false;
+
+      // Check if the date is valid
+      const { year, month, day, date } = parseDate;
+      const isValidDate = date.getFullYear() === year &&
+        date.getMonth() + 1 === month &&
+        date.getDate() === day;
+      // Check if the date is valid
+      return isValidDate;
     },
     message: function (element, message = "") {
       return message || ZkValidatorMessages.date;
     },
   },
-  dateFormat: {
+  date_before: {
+    handler: function (element, date, format = "YYYY-MM-DD") {
+      // Check if value is empty or is a date before the specified date
+      const inputValue = element.value.trim();
+      if (!inputValue) return true; // Return true for empty input (no validation required)
+
+      const inputDate = ZkValidatorUtils.parseDate(inputValue, format);
+      if (!inputDate || isNaN(inputDate.date.getTime())) return false;
+
+      const compareDate = ZkValidatorUtils.getComparisonDate(date);
+      if (!compareDate || isNaN(compareDate.getTime())) return false;
+
+      inputDate.date.setHours(0, 0, 0, 0);
+      compareDate.setHours(0, 0, 0, 0);
+
+      // Check if inputDate is strictly before compareDate
+      return inputDate.date.getTime() < compareDate.getTime();
+    },
+    message: function (element, message = "", date) {
+      message = message || ZkValidatorMessages.date_before;
+      return message.replace(":date", date);
+    },
+  },
+  date_after: {
+    handler: function (element, date, format = "YYYY-MM-DD") {
+      // Check if value is empty or match date after pattern
+      const inputValue = element.value.trim();
+      if (!inputValue) return true; // Return true for empty input (no validation required)
+
+      const inputDate = ZkValidatorUtils.parseDate(inputValue, format);
+      if (!inputDate || isNaN(inputDate.date.getTime())) return false;
+
+      const compareDate = ZkValidatorUtils.getComparisonDate(date);
+      if (!compareDate || isNaN(compareDate.getTime())) return false;
+
+      inputDate.date.setHours(0, 0, 0, 0);
+      compareDate.setHours(0, 0, 0, 0);
+
+      // Check if inputDate is strictly after compareDate
+      return inputDate.date.getTime() > compareDate.getTime();
+    },
+    message: function (element, message = "", date) {
+      message = message || ZkValidatorMessages.date_after;
+      return message.replace(":date", date);
+    },
+  },
+  date_format: {
     handler: function (element, format) {
-      // Check if value is empty or match date format pattern
-      return element.value.trim() === "" || element.value.match(format);
+      const inputValue = element.value.trim();
+      if (!inputValue) return true; // Return true for empty input (no validation required)
+
+      const parseDate = ZkValidatorUtils.parseDate(inputValue, format);
+      if (!parseDate || isNaN(parseDate.date.getTime())) return false;
+
+      const { year, month, day, date } = parseDate;
+
+      const isValidDate =
+        date.getFullYear() === year &&
+        date.getMonth() + 1 === month &&
+        date.getDate() === day;
+
+      return isValidDate;
     },
     message: function (element, message = "", format) {
-      message = message || ZkValidatorMessages.dateFormat;
+      message = message || ZkValidatorMessages.date_format;
       return message.replace(":format", format);
-    },
-  },
-  dateBefore: {
-    handler: function (element, date) {
-      // Check if value is empty or date is before the specified date
-      return element.value.trim() === "" || element.value < date;
-    },
-    message: function (element, message = "", date) {
-      message = message || ZkValidatorMessages.dateBefore;
-      return message.replace(":date", date);
-    },
-  },
-  dateAfter: {
-    handler: function (element, date) {
-      // Check if value is empty or date is after the specified date
-      return element.value.trim() === "" || element.value > date;
-    },
-    message: function (element, message = "", date) {
-      message = message || ZkValidatorMessages.dateAfter;
-      return message.replace(":date", date);
     },
   },
   contains: {
@@ -319,10 +484,7 @@ export const ZkValidatorRules = {
   boolean: {
     handler: function (element) {
       // Check if value is empty or is a boolean value
-      return (
-        element.value.trim() === "" ||
-        ["true", "false", "1", "0"].includes(element.value)
-      );
+      return [true, false, 'true', 'false', 0, 1, '0', '1'].includes(element.value.trim());
     },
     message: function (element, message = "") {
       return message || ZkValidatorMessages.boolean;
@@ -348,53 +510,50 @@ export const ZkValidatorRules = {
       return message.replace(":length", length);
     },
   },
-  startsWith: {
+  starts_with: {
     handler: function (element, prefix) {
       // Check if value is empty or starts with the specified prefix
       return element.value.trim() === "" || element.value.startsWith(prefix);
     },
     message: function (element, message = "", prefix) {
-      message = message || ZkValidatorMessages.startsWith;
+      message = message || ZkValidatorMessages.starts_with;
       return message.replace(":prefix", prefix);
     },
   },
-  endsWith: {
+  ends_with: {
     handler: function (element, suffix) {
       // Check if value is empty or ends with the specified suffix
       return element.value.trim() === "" || element.value.endsWith(suffix);
     },
     message: function (element, message = "", suffix) {
-      message = message || ZkValidatorMessages.endsWith;
+      message = message || ZkValidatorMessages.ends_with;
       return message.replace(":suffix", suffix);
     },
   },
   in: {
-    handler: function (element, values) {
+    handler: function (element, ...values) {
       // Check if value is empty or is in the specified values
       return element.value.trim() === "" || values.includes(element.value);
     },
-    message: function (element, message = "", values) {
+    message: function (element, message = "", ...values) {
       message = message || ZkValidatorMessages.in;
       return message.replace(":values", values.join(", "));
     },
   },
-  notIn: {
-    handler: function (element, values) {
+  not_in: {
+    handler: function (element, ...values) {
       // Check if value is empty or is not in the specified values
       return element.value.trim() === "" || !values.includes(element.value);
     },
     message: function (element, message = "", values) {
-      message = message || ZkValidatorMessages.notIn;
+      message = message || ZkValidatorMessages.not_in;
       return message.replace(":values", values.join(", "));
     },
   },
   match: {
     handler: function (element, field) {
-      // Check if value is empty or match the specified field value
-      if (element.value.trim() === "") return true;
-      const matchField =
-        document.getElementById(field) ||
-        document.querySelector(`[name="${field}"]`);
+      // match the value of the specified field
+      const matchField = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
       if (matchField == null) {
         return false;
       }
@@ -423,6 +582,16 @@ export const ZkValidatorRules = {
     },
     message: function (element, message = "") {
       return message || ZkValidatorMessages.regex;
+    },
+  },
+  not_regex: {
+    handler: function (element, pattern) {
+      // Check if value is empty or does not match the specified regex pattern - remove slashes from regex
+      const regex = new RegExp(pattern.replace(/^\/|\/$/g, ""));
+      return element.value.trim() === "" || !regex.test(element.value);
+    },
+    message: function (element, message = "") {
+      return message || ZkValidatorMessages.not_regex;
     },
   },
   min: {
@@ -506,87 +675,83 @@ export const ZkValidatorRules = {
     handler: function (element, size) {
       // Check if value is empty or file size is equal to the specified size
       if (element.files.length === 0) return true;
-
-      if (element.files.length > 1) {
-        for (let i = 0; i < element.files.length; i++) {
-          if (element.files[i].size !== size) {
-            return false;
-          }
+      const expectedSize = parseFloat(size); // in KB
+      for (let i = 0; i < element.files.length; i++) {
+        const sizeInKB = parseFloat((element.files[i].size / 1024).toFixed(2));
+        if (sizeInKB !== expectedSize) {
+          return false;
         }
-        return true;
       }
-      return element.files[0].size === size;
+      return true;
     },
     message: function (element, message = "", size) {
       message = message || ZkValidatorMessages.size;
       return message.replace(":size", size);
     },
   },
-  minSize: {
+  min_size: {
     handler: function (element, size) {
-      // Check if value is empty or file size is greater than or equal to the specified size
+      // Check if value is empty or file size is greater then the specified size
       if (element.files.length === 0) return true;
-      if (element.files.length > 1) {
-        for (let i = 0; i < element.files.length; i++) {
-          if (element.files[i].size < size) {
-            return false;
-          }
+      const minSize = parseFloat(size); // in KB
+      for (let i = 0; i < element.files.length; i++) {
+        const sizeInKB = parseFloat((element.files[i].size / 1024).toFixed(2));
+        if (sizeInKB < minSize) {
+          return false;
         }
-        return true;
       }
-      return element.files[0].size >= size;
+      return true;
     },
     message: function (element, message = "", size) {
-      message = message || ZkValidatorMessages.minSize;
+      message = message || ZkValidatorMessages.min_size;
       return message.replace(":size", size);
     },
   },
-  maxSize: {
+  max_size: {
     handler: function (element, size) {
-      // Check if value is empty or file size is less than or equal to the specified size
+      // Check if value is empty or file size is less than the specified size
       if (element.files.length === 0) return true;
-      if (element.files.length > 1) {
-        for (let i = 0; i < element.files.length; i++) {
-          if (element.files[i].size > size) {
-            return false;
-          }
+      const maxSize = parseFloat(size); // in KB
+      for (let i = 0; i < element.files.length; i++) {
+        const sizeInKB = parseFloat((element.files[i].size / 1024).toFixed(2));
+        if (sizeInKB > maxSize) {
+          return false;
         }
-        return true;
       }
-      return element.files[0].size <= size;
+      return true;
     },
     message: function (element, message = "", size) {
-      message = message || ZkValidatorMessages.maxSize;
+      message = message || ZkValidatorMessages.max_size;
       return message.replace(":size", size);
     },
   },
-  betweenSize: {
+  between_size: {
     handler: function (element, min, max) {
       // Check if value is empty or file size is between the specified min and max values
       if (element.files.length === 0) return true;
-      if (element.files.length > 1) {
-        for (let i = 0; i < element.files.length; i++) {
-          if (element.files[i].size < min || element.files[i].size > max) {
-            return false;
-          }
+      const minSize = parseFloat(min); // in KB
+      const maxSize = parseFloat(max); // in KB
+      for (let i = 0; i < element.files.length; i++) {
+        const sizeInKB = parseFloat((element.files[i].size / 1024).toFixed(2));
+        // Check if the file size is between the specified min and max values
+        if (sizeInKB < minSize || sizeInKB > maxSize) {
+          return false;
         }
-        return true;
       }
-      return element.files[0].size >= min && element.files[0].size <= max;
+      return true;
     },
     message: function (element, message = "", min, max) {
-      message = message || ZkValidatorMessages.betweenSize;
+      message = message || ZkValidatorMessages.between_size;
       return message.replace(":min", min).replace(":max", max);
     },
   },
   mimes: {
     handler: function (element, ...mimes) {
-      const _self = ZkValidatorRules;
       // Check if value is empty or file type is in the specified mimes
       if (element.files.length === 0) return true;
       const validMimes = [];
       mimes.forEach((mime) => {
-        const fileMime = _self.validMimeTypes[mime] ?? null;
+        const fileMime = ZkValidatorUtils.validMimeTypes[mime] ?? null;
         if (fileMime) {
           validMimes.push(fileMime);
         }
@@ -610,14 +775,13 @@ export const ZkValidatorRules = {
     handler: async function (element, url, ...args) {
       // Check if value is empty or is unique
       if (element.value.trim() === "") return true;
-      const _self = ZkValidatorRules;
       let body = new URLSearchParams({ [element.name]: element.value });
       if (args.length > 0) {
         args.forEach((arg, i) => {
           body.append(i, arg);
         });
       }
-      _self.dispatchCustomEvent(element, "zk-unique-loading", {
+      ZkValidatorUtils.dispatchCustomEvent(element, "zk-unique-loading", {
         url,
         body: body.toString(),
       });
@@ -631,21 +795,21 @@ export const ZkValidatorRules = {
           body: body.toString(),
         });
         const data = await response.json();
-        _self.dispatchCustomEvent(element, "zk-unique-success", {
+        ZkValidatorUtils.dispatchCustomEvent(element, "zk-unique-success", {
           isValid: data.valid,
           url,
           body: body.toString(),
         });
         return data.valid;
       } catch (error) {
-        _self.dispatchCustomEvent(element, "zk-unique-error", {
+        ZkValidatorUtils.dispatchCustomEvent(element, "zk-unique-error", {
           error,
           url,
           body: body.toString(),
         });
         return false;
       } finally {
-        _self.dispatchCustomEvent(element, "zk-unique-complete", {
+        ZkValidatorUtils.dispatchCustomEvent(element, "zk-unique-complete", {
           url,
           body: body.toString(),
         });
@@ -1058,6 +1222,7 @@ export default class ZkValidator {
   static ZkValidatorMessages = ZkValidatorMessages;
   static ZkValidatorRules = ZkValidatorRules;
   static ZkFormValidator = ZkFormValidator;
+  static ZkValidatorUtils = ZkValidatorUtils;
 
   constructor(fields = {}, rules = {}, messages = {}) {
     this.checkAllRules = false;
@@ -1065,6 +1230,7 @@ export default class ZkValidator {
     this.rules = { ...ZkValidator.ZkValidatorRules, ...rules };
     this.messages = { ...ZkValidator.ZkValidatorMessages, ...messages };
     this.errors = {};
+    this.utils = ZkValidator.ZkValidatorUtils;
   }
 
   setCheckAllRules(checkAllRules) {
@@ -1073,6 +1239,20 @@ export default class ZkValidator {
 
   isCheckAllRules() {
     return this.checkAllRules;
+  }
+
+  addUtility(name, utility) {
+    this.utils[name] = utility;
+  }
+
+  addUtilities(utilities) {
+    for (const name in utilities) {
+      this.addUtility(name, utilities[name]);
+    }
+  }
+
+  getUtility() {
+    return this.utils;
   }
 
   addRule(name, handler, message) {
