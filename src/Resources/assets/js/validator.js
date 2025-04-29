@@ -190,7 +190,7 @@ export const ZkValidatorMessages = {
   ends_with: "This field must end with :suffix.",
   in: "This field must be one of the following: :values.",
   not_in: "This field must not be one of the following: :values.",
-  match: "This field must match the field :field.",
+  same: "This field must be the same as :field.",
   pattern: "This field format is invalid.",
   regex: "This field format is invalid.",
   not_regex: "This field format is invalid.",
@@ -290,17 +290,10 @@ export const ZkValidatorRules = {
       return isRequired ? _self.required.handler(element) : true;
     },
     message: function (element, message = "", field, value) {
-      const matchField =
-        document.getElementById(field) ||
-        document.querySelector(`[name="${field}"]`);
+      const matchField = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
       if (matchField) {
-        // get label text
-        const label = matchField.closest("label");
-        if (label) {
-          field = label.innerText;
-        } else {
-          field = matchField.name;
-        }
+        const label = (matchField.id) ? document.querySelector(`label[for="${matchField.id}"]`) : null;
+        field = (label) ? label.innerText : matchField.name;
       }
       return message || ZkValidatorMessages.required_if.replace(":field", field).replace(":value", value);
     },
@@ -553,17 +546,22 @@ export const ZkValidatorRules = {
       return message.replace(":values", values.join(", "));
     },
   },
-  match: {
+  same: {
     handler: function (element, field) {
-      // match the value of the specified field
-      const matchField = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
-      if (matchField == null) {
+      // same the value of the specified field
+      const sameField = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
+      if (sameField == null) {
         return false;
       }
-      return element.value === matchField.value;
+      return element.value === sameField.value;
     },
     message: function (element, message = "", field) {
-      message = message || ZkValidatorMessages.match;
+      const sameField = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
+      if (sameField) {
+        const label = (sameField.id) ? document.querySelector(`label[for="${sameField.id}"]`) : null;
+        field = (label) ? label.innerText : sameField.name;
+      }
+      message = message || ZkValidatorMessages.same;
       return message.replace(":field", field);
     },
   },
