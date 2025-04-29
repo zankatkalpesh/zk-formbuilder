@@ -18,10 +18,7 @@ export class ZkErrorElement {
         for (let error of this.error.errors) {
             const elm = document.createElement(this.error.tag || 'span');
             // Set Attributes
-            for (let attr in this.error.attributes) {
-                const value = this.error.attributes[attr];
-                elm.setAttribute(isNaN(attr) ? attr : value, isNaN(attr) ? value : true);
-            }
+            this.formBuilder.setAttributesFromObject(elm, this.error.attributes);
             // Before Error
             elm.appendChild(this.formBuilder.stringToHTML(this.error.before || ''));
             // Error Text
@@ -60,10 +57,7 @@ export class ZkLabelElement {
         // Create Label
         const elm = document.createElement(this.label.tag);
         // Set Attributes
-        for (let attr in this.label.attributes) {
-            const value = this.label.attributes[attr];
-            elm.setAttribute(isNaN(attr) ? attr : value, isNaN(attr) ? value : true);
-        }
+        this.formBuilder.setAttributesFromObject(elm, this.label.attributes);
         // Before Label
         elm.appendChild(this.formBuilder.stringToHTML(this.label.before || ''));
         // Label Text
@@ -182,10 +176,7 @@ export class ZkElement {
             elm.setAttribute('type', this.field.type);
         }
 
-        for (let attr in this.field.attributes) {
-            const value = this.field.attributes[attr];
-            elm.setAttribute(!isNaN(attr) ? value : attr, !isNaN(attr) ? true : value);
-        }
+        this.formBuilder.setAttributesFromObject(elm, this.field.attributes);
 
         if (this.field.rules) {
             elm.setAttribute('data-rules', JSON.stringify(this.field.rules));
@@ -294,10 +285,7 @@ export class ZkSelectElement extends ZkElement {
         // Create Select Element
         const elm = document.createElement('select');
         // Set Attributes
-        for (let attr in this.field.attributes) {
-            const value = this.field.attributes[attr];
-            elm.setAttribute(!isNaN(attr) ? value : attr, !isNaN(attr) ? true : value);
-        }
+        this.formBuilder.setAttributesFromObject(elm, this.field.attributes);
         // Rules
         if (this.field.rules) {
             elm.setAttribute('data-rules', JSON.stringify(this.field.rules));
@@ -349,10 +337,7 @@ export class ZkSelectElement extends ZkElement {
         const optgroupElm = document.createElement('optgroup');
         optgroupElm.label = optgroup.label;
         const optAttrs = this.optionAttributes(optgroup, ['label', 'optgroup', 'options']);
-        for (let attr in optAttrs) {
-            const value = optAttrs[attr];
-            optgroupElm.setAttribute(!isNaN(attr) ? value : attr, !isNaN(attr) ? true : value);
-        }
+        this.formBuilder.setAttributesFromObject(optgroupElm, optAttrs);
         for (let opt of optgroup.options) {
             const optElm = this.createOptionElement(opt);
             optgroupElm.appendChild(optElm);
@@ -366,10 +351,7 @@ export class ZkSelectElement extends ZkElement {
         optElm.text = option.label;
         // Attributes
         const attrs = this.optionAttributes(option, ['label', 'value']);
-        for (let attr in attrs) {
-            const value = attrs[attr];
-            optElm.setAttribute(!isNaN(attr) ? value : attr, !isNaN(attr) ? true : value);
-        }
+        this.formBuilder.setAttributesFromObject(optElm, attrs);
         return optElm;
     }
 
@@ -497,10 +479,8 @@ export class ZkMultipleActionElement {
         // Create Action
         const elm = document.createElement(this.action.tag);
         // Set Attributes
-        for (let attr in this.action.attributes) {
-            const value = this.action.attributes[attr];
-            elm.setAttribute(!isNaN(attr) ? value : attr, !isNaN(attr) ? true : value);
-        }
+        this.formBuilder.setAttributesFromObject(elm, this.action.attributes);
+        // Set row Object
         if (this.action.rowObject) {
             elm.setAttribute('data-row-object', JSON.stringify(this.action.rowObject));
         }
@@ -618,10 +598,7 @@ export class ZkAction {
         // Create Action
         const elm = document.createElement(this.action.tag);
         // Set Attributes
-        for (let attr in this.action.attributes) {
-            const value = this.action.attributes[attr];
-            elm.setAttribute(!isNaN(attr) ? value : attr, !isNaN(attr) ? true : value);
-        }
+        this.formBuilder.setAttributesFromObject(elm, this.action.attributes);
         // Action Before Text
         elm.appendChild(this.formBuilder.stringToHTML(this.action.before || ''));
         // Action Text
@@ -708,7 +685,7 @@ export default class ZkFormBuilder {
     setForm(form) {
         form = (typeof form === 'string') ? document.getElementById(form) : form;
         if (form == null || (form && form.tagName !== 'FORM')) {
-            console.error('Form not found');
+            console.error("Invalid form element provided.");
             return;
         }
         this.form = form;
@@ -744,7 +721,12 @@ export default class ZkFormBuilder {
     }
 
     setFormObject(frmObj) {
-        this.frmObj = (typeof frmObj === 'string') ? JSON.parse(frmObj) : frmObj;
+        try {
+            this.frmObj = (typeof frmObj === 'string') ? JSON.parse(frmObj) : frmObj;
+        } catch (e) {
+            console.error("Invalid JSON in setFormObject", e);
+            this.frmObj = null;
+        }
     }
 
     render(container, frmObj) {
@@ -812,10 +794,8 @@ export default class ZkFormBuilder {
         if (this.frmObj.action) this.form.setAttribute('action', this.frmObj.action);
 
         this.form.setAttribute('method', (this.frmObj.method === 'GET' ? 'GET' : 'POST'));
-        for (let attr in this.frmObj.attributes) {
-            const value = this.frmObj.attributes[attr];
-            this.form.setAttribute(isNaN(attr) ? attr : value, isNaN(attr) ? value : true);
-        }
+        // Set Form Attributes
+        this.setAttributesFromObject(this.form, this.frmObj.attributes);
         // Add Form Hidden Fields
         this.addFormHiddenFields();
         // Form Buttons
@@ -905,10 +885,21 @@ export default class ZkFormBuilder {
     }
 
     setAttributesFromString(element, attrString) {
-        if (!attrString) return;
+        if (typeof attrString !== 'string' || attrString === null) return;
         const regex = /([a-zA-Z0-9-]+)(?:=["']([^"']*)["'])?/g;
         for (const match of attrString.matchAll(regex)) {
             element.setAttribute(match[1], match[2] || true);
+        }
+    }
+
+    setAttributesFromObject(element, attributes) {
+        if (typeof attributes !== 'object' || attributes === null) return;
+        for (let attr in attributes) {
+            const isNumericAttr = !isNaN(attr);
+            element.setAttribute(
+                isNumericAttr ? attributes[attr] : attr,
+                isNumericAttr ? true : attributes[attr]
+            );
         }
     }
 
@@ -1039,11 +1030,7 @@ export default class ZkFormBuilder {
         input.setAttribute('type', 'hidden');
         input.setAttribute('name', name);
         input.setAttribute('value', value);
-        // Set Attributes
-        for (let attr in attributes) {
-            const value = this.error.attributes[attr];
-            input.setAttribute(isNaN(attr) ? attr : value, isNaN(attr) ? value : true);
-        }
+        this.setAttributesFromObject(input, attributes);
         this.form.appendChild(input);
     }
 
@@ -1061,6 +1048,10 @@ export default class ZkFormBuilder {
             result += chars.charAt(Math.floor(Math.random() * chars.length));
         }
         return result;
+    }
+
+    on(event, callback) {
+        this.subscribe(event, callback);
     }
 
     subscribe(eventName, callback, lastData = false) {

@@ -1,18 +1,19 @@
 export const ZkValidatorUtils = {
   // Check if the value is empty
   isEmpty(value) {
-    return value === null || value === undefined || value.trim() === "";
+    return value === null || value === undefined || (typeof value === "string" && value.trim() === "");
   },
   // Check if the value is a number
   isNumber(value) {
-    return !isNaN(value) && !isNaN(parseFloat(value));
+    return typeof value === "number" || (!isNaN(value) && !isNaN(parseFloat(value)));
   },
   // Condition Checking
   checkCondition(matchValue, operator, value) {
     switch (operator) {
       case "=":
-        return matchValue == value;
       case "==":
+        return matchValue == value;
+      case "===":
         return matchValue === value;
       case "!=":
         return matchValue != value;
@@ -251,9 +252,9 @@ export const ZkValidatorRules = {
     },
   },
   required_if: {
-    handler: function (element, field, value) {
-      // Check operator include =, !=, >, <, >=, and <=
-      if (operator && !["=", "==", "!=", ">", "<", ">=", "<="].includes(operator)) {
+    handler: function (element, field, operator, value = "") {
+      // Check operator include "=", "==", "===", !=, >, <, >=, and <=
+      if (!["=", "==", "===", "!=", ">", "<", ">=", "<="].includes(operator)) {
         value = operator;
         operator = "=";
       }
@@ -384,7 +385,7 @@ export const ZkValidatorRules = {
   date: {
     handler: function (element, format = "YYYY-MM-DD") {
       const value = element.value.trim();
-      if (!value) return false;
+      if (!value) return true; // Return true for empty input (no validation required)
       // Check format is true or not
       format = format === "true" ? "YYYY-MM-DD" : format;
 
@@ -484,7 +485,9 @@ export const ZkValidatorRules = {
   boolean: {
     handler: function (element) {
       // Check if value is empty or is a boolean value
-      return [true, false, 'true', 'false', 0, 1, '0', '1'].includes(element.value.trim());
+      const val = (element.value + "").trim().toLowerCase();
+      return ["true", "false", "0", "1"].includes(val);
+      // return [true, false, 'true', 'false', 0, 1, '0', '1'].includes(element.value.trim());
     },
     message: function (element, message = "") {
       return message || ZkValidatorMessages.boolean;
@@ -773,14 +776,21 @@ export const ZkValidatorRules = {
   },
   unique: {
     handler: async function (element, url, ...args) {
-      // Check if value is empty or is unique
       if (element.value.trim() === "") return true;
+      // Abort previous request if needed
+      if (element._uniqueAbortController) {
+        element._uniqueAbortController.abort();
+      }
+      const controller = new AbortController();
+      element._uniqueAbortController = controller;
+
       let body = new URLSearchParams({ [element.name]: element.value });
       if (args.length > 0) {
         args.forEach((arg, i) => {
           body.append(i, arg);
         });
       }
+
       ZkValidatorUtils.dispatchCustomEvent(element, "zk-unique-loading", {
         url,
         body: body.toString(),
@@ -789,19 +799,19 @@ export const ZkValidatorRules = {
       try {
         const response = await fetch(url, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: body.toString(),
+          signal: controller.signal,
         });
         const data = await response.json();
         ZkValidatorUtils.dispatchCustomEvent(element, "zk-unique-success", {
-          isValid: data.valid,
+          valid: data.valid,
           url,
           body: body.toString(),
         });
         return data.valid;
-      } catch (error) {
+      } catch (err) {
+        if (err.name === "AbortError") return false;
         ZkValidatorUtils.dispatchCustomEvent(element, "zk-unique-error", {
           error,
           url,
@@ -814,6 +824,7 @@ export const ZkValidatorRules = {
           body: body.toString(),
         });
         element.classList.remove("zk-unique-loading");
+        element._uniqueAbortController = null;
       }
     },
     message: function (element, message = "") {
@@ -847,7 +858,7 @@ export class ZkFormValidator {
   constructor(form, fields = {}, rules = {}, messages = {}) {
     this.form = typeof form === "string" ? document.getElementById(form) : form;
     if (!this.form || this.form.tagName !== "FORM") {
-      console.error("Form element not found");
+      console.error("Invalid form element provided.");
       return;
     }
     this.form.noValidate = true;
@@ -995,17 +1006,41 @@ export class ZkFormValidator {
   }
 
   registerFieldEvents(element, rules, messages) {
+
+    if (!this._debouncedListeners) {
+      this._debouncedListeners = new WeakMap();
+    }
+
     const events = ["checkbox", "radio"].includes(element.type)
       ? ["click", "change"]
       : ["change", "keyup"];
-    const listener = async (event) => {
-      await this.validateField(element, rules, messages);
-    };
+
+    if (!this._debouncedListeners.has(element)) {
+      this._debouncedListeners.set(element, {});
+    }
+
+    const listenerMap = this._debouncedListeners.get(element);
+
     events.forEach((event) => {
-      const _listener =
-        event === "keyup" ? this.debounce(listener, 500) : listener;
-      element.removeEventListener(event, _listener);
-      element.addEventListener(event, _listener);
+      // If we previously added a listener, remove it
+      if (listenerMap[event]) {
+        element.removeEventListener(event, listenerMap[event]);
+      }
+
+      // Create new listener (debounced if needed)
+      const rawListener = async (e) => {
+        await this.validateField(element, rules, messages);
+      };
+      // If the event is "keyup", debounce the listener
+      const finalListener = event === "keyup"
+        ? this.debounce(rawListener, 500)
+        : rawListener;
+
+      // Store for future reference/removal
+      listenerMap[event] = finalListener;
+
+      // Add listener
+      element.addEventListener(event, finalListener);
     });
   }
 
@@ -1326,7 +1361,7 @@ export default class ZkValidator {
     this.clearFieldErrors(element.name);
     for (const rule in rules) {
       if (!this.rules[rule]) {
-        console.error(`Rule "${rule}" is not defined`);
+        console.error(`Validation rule "${rule}" not defined.`);
         continue;
       }
       const args = rules[rule].split(",");

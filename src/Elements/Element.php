@@ -179,6 +179,9 @@ class Element implements ElementContract
     {
         $this->name = $this->field['name'] ?? $this->name;
         $this->type = $this->field['type'] ?? $this->type;
+        if ($this->type === 'hidden') {
+            $this->field['label'] = false;
+        }
         $this->messages = $this->field['messages'] ?? $this->messages;
         $this->persist = $this->field['persist'] ?? $this->persist;
         $this->attributes = $this->getConfigByKey('attributes') ?? [];
