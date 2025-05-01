@@ -7,6 +7,12 @@ export const ZkValidatorUtils = {
   isNumber(value) {
     return typeof value === "number" || (!isNaN(value) && !isNaN(parseFloat(value)));
   },
+  // Get label text for the specified element
+  getLabelText(elm) {
+    const element = (elm instanceof HTMLElement) ? elm : (document.getElementById(elm) || document.querySelector(`[name="${elm}"]`));
+    const label = element?.id ? document.querySelector(`label[for="${element.id}"]`) : null;
+    return label ? label.innerText : element?.name || element?.placeholder || (typeof element === "string" ? element : "field");
+  },
   // Condition Checking
   checkCondition(matchValue, operator, value) {
     switch (operator) {
@@ -29,61 +35,87 @@ export const ZkValidatorUtils = {
         return false;
     }
   },
-  // Valid MIME types
-  validMimeTypes: {
-    // Get valid mime types for the specified file extension
-    pdf: "application/pdf",
-    doc: "application/msword",
-    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    xls: "application/vnd.ms-excel",
-    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ppt: "application/vnd.ms-powerpoint",
-    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    txt: "text/plain",
-    rtf: "application/rtf",
-    odt: "application/vnd.oasis.opendocument.text",
-    ods: "application/vnd.oasis.opendocument.spreadsheet",
+  // Get MIME type from file extension
+  getMimeType(ext = null) {
+    const result = [];
+
+    if (!ext) {
+      for (const types of Object.values(this.mimeTypes)) {
+        result.push(...types);
+      }
+      return [...new Set(result)];
+    }
+
+    const exts = Array.isArray(ext) ? ext : [ext];
+    for (const ext of exts) {
+      if (this.mimeTypes[ext]) {
+        result.push(...this.mimeTypes[ext]);
+      }
+    }
+    return [...new Set(result)];
+  },
+  // Get file extension from MIME type
+  getExtensionFromMimeType(mime) {
+    const result = [];
+    const mimes = Array.isArray(mime) ? mime : [mime];
+    for (const ext in this.mimeTypes) {
+      const types = this.mimeTypes[ext];
+      for (let i = 0; i < types.length; i++) {
+        if (mimes.includes(types[i])) {
+          result.push(ext);
+          break;
+        }
+      }
+    }
+    return result;
+  },
+  // MIME types
+  mimeTypes: {
+    // Documents
+    pdf: ['application/pdf', 'application/acrobat', 'application/nappdf', 'application/x-pdf', 'image/pdf'],
+    doc: ['application/msword', 'application/vnd.ms-word', 'application/x-msword', 'zz-application/zz-winassoc-doc'],
+    docx: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    xls: ['application/vnd.ms-excel', 'application/msexcel', 'application/x-msexcel', 'zz-application/zz-winassoc-xls'],
+    xlsx: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+    ppt: ['application/vnd.ms-powerpoint', 'application/mspowerpoint', 'application/powerpoint', 'application/x-mspowerpoint'],
+    pptx: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+    txt: ['text/plain'],
+    rtf: ['application/rtf', 'text/rtf'],
+    odt: ['application/vnd.oasis.opendocument.text'],
+    ods: ['application/vnd.oasis.opendocument.spreadsheet'],
 
     // Images
-    jpg: "image/jpeg",
-    jpeg: "image/jpeg",
-    png: "image/png",
-    gif: "image/gif",
-    tiff: "image/tiff",
-    bmp: "image/bmp",
-    webp: "image/webp",
-    svg: "image/svg+xml",
-    ico: "image/vnd.microsoft.icon",
+    jpg: ['image/jpeg', 'image/pjpeg'],
+    jpeg: ['image/jpeg', 'image/pjpeg'],
+    png: ['image/png', 'image/apng', 'image/vnd.mozilla.apng'],
+    gif: ['image/gif'],
+    tiff: ['image/tiff'],
+    bmp: ['image/bmp', 'image/x-bmp', 'image/x-ms-bmp'],
+    webp: ['image/webp'],
+    svg: ['image/svg+xml', 'image/svg'],
+    ico: ['application/ico', 'image/ico', 'image/icon', 'image/vnd.microsoft.icon', 'image/x-ico', 'image/x-icon', 'text/ico'],
 
     // Audio
-    mp3: "audio/mpeg",
-    wav: "audio/wav",
-    ogg: "audio/ogg",
-    aac: "audio/aac",
-    flac: "audio/flac",
+    mp3: ['audio/mpeg', 'audio/mp3', 'audio/x-mp3', 'audio/x-mpeg', 'audio/x-mpg'],
+    wav: ['audio/wav', 'audio/vnd.wave', 'audio/wave', 'audio/x-wav'],
+    ogg: ['audio/ogg', 'audio/vorbis', 'audio/x-flac+ogg', 'audio/x-ogg', 'audio/x-oggflac', 'audio/x-speex+ogg', 'audio/x-vorbis', 'audio/x-vorbis+ogg', 'video/ogg', 'video/x-ogg', 'video/x-theora', 'video/x-theora+ogg'],
+    aac: ['audio/aac', 'audio/x-aac', 'audio/x-hx-aac-adts'],
+    flac: ['audio/flac', 'audio/x-flac'],
 
     // Video
-    mp4: "video/mp4",
-    webm: "video/webm",
-    avi: "video/x-msvideo",
-    mov: "video/quicktime",
-    mkv: "video/x-matroska",
-    flv: "video/x-flv",
-    ogv: "video/ogg",
+    mp4: ['video/mp4', 'application/mp4', 'video/mp4v-es', 'video/x-m4v'],
+    webm: ['video/webm'],
+    avi: ['video/avi', 'video/divx', 'video/msvideo', 'video/vnd.avi', 'video/vnd.divx', 'video/x-avi', 'video/x-msvideo'],
+    mov: ['video/quicktime'],
+    mkv: ['video/x-matroska'],
+    flv: ['video/x-flv', 'application/x-flash-video', 'flv-application/octet-stream', 'video/flv'],
+    ogv: ['video/ogg', 'video/x-ogg'],
 
-    // Archives
-    // zip: "application/zip",
-    // rar: "application/x-rar-compressed",
-    // "7z": "application/x-7z-compressed",
-    // tar: "application/x-tar",
-
-    // Code and Text Files
-    // html: "text/html",
-    // css: "text/css",
-    // js: "application/javascript",
-    // json: "application/json",
-    // xml: "application/xml",
-    csv: "text/csv",
+    // Code & Text
+    html: ['text/html', 'application/xhtml+xml'],
+    json: ['application/json', 'application/schema+json'],
+    xml: ['application/xml', 'text/xml'],
+    csv: ['text/csv', 'application/csv', 'text/x-comma-separated-values', 'text/x-csv']
   },
   // Dispatch custom events
   dispatchCustomEvent(element, eventName, detail = {}) {
@@ -101,12 +133,12 @@ export const ZkValidatorUtils = {
       case 'today':
         return new Date(now.setHours(0, 0, 0, 0)); // Today at 00:00:00
       case 'tomorrow':
-        return new Date(now.setDate(now.getDate() + 1)); // Tomorrow at 00:00:00
+        return new Date(now.setDate(now.getDate() + 1).setHours(0, 0, 0, 0)); // Tomorrow at 00:00:00
       case 'week':
-        return new Date(now.setDate(now.getDate() + 7)); // One week from now at 00:00:00
+        return new Date(now.setDate(now.getDate() + 7).setHours(0, 0, 0, 0)); // One week from now at 00:00:00
       default:
         // Parse the default date according to the format
-        return ZkValidatorUtils.parseDate(date, format);
+        return ZkValidatorUtils.parseDate(date, format)?.date || null; // Return the parsed date or null if parsing fails
     }
   },
   parseDate(dateStr, format) {
@@ -143,13 +175,15 @@ export const ZkValidatorUtils = {
       day = part2;
     }
 
+    const date = new Date(year, month - 1, day);
+    date.setHours(0, 0, 0, 0); // Set time to midnight
     // Return the constructed date object
     return {
       year: parseInt(year),
       month: parseInt(month),
       day: parseInt(day),
-      date: new Date(year, month - 1, day),
-    }
+      date: date
+    };
   }
 };
 
@@ -170,39 +204,51 @@ export const ZkValidatorMessages = {
   // Default messages
   nullable: "This field must be null.",
   required: "This field is required.",
-  required_if: "This field is required when :field is :value.",
-  email: "Invalid email address.",
-  numeric: "This field must be numeric.",
+  required_if: "This field is required when :other is :value.",
+  required_with: "This field is required when :values is present.",
+  required_with_all: "This field is required when :values are present.",
+  required_without: "This field is required when :values is not present.",
+  required_without_all: "This field is required when none of :values are present.",
+  email: "This field must be a valid email address.",
+  numeric: "This field must be a number.",
   integer: "This field must be an integer.",
-  alpha: "This field must be alphabetic.",
-  alpha_num: "This field must be alphanumeric.",
-  alpha_dash: "This field may only contain letters, numbers, and dashes.",
-  url: "This field is not a valid URL.",
-  date: "This field is not a valid date.",
+  digits: "This field must be :digits digits.",
+  digits_between: "This field must be between :min and :max digits.",
+  alpha: "This field field must only contain letters.",
+  alpha_num: "This field must only contain letters and numbers.",
+  alpha_dash: "This field must only contain letters, numbers, dashes, and underscores.",
+  url: "This field must be a valid URL.",
+  date: "This field must be a valid date.",
+  date_between: "This field must be between :min and :max.",
   date_before: "This field must be a date before :date.",
+  before_or_equal: "This field must be a date before or equal to :date.",
   date_after: "This field must be a date after :date.",
-  date_format: "This field must be a date in the format :format.",
-  contains: "This field must contain :contains.",
+  after_or_equal: "This field must be a date after or equal to :date.",
+  date_format: "This field must match the format :format.",
+  json: "This field must be a valid JSON string.",
+  ip: "This field must be a valid :version address.",
+  contains: "This field is missing a required value.",
   boolean: "This field must be true or false.",
   minlength: "This field must be at least :length characters.",
   maxlength: "This field may not be greater than :length characters.",
-  starts_with: "This field must start with :prefix.",
-  ends_with: "This field must end with :suffix.",
+  starts_with: "This field must start with one of the following: :prefixes.",
+  ends_with: "This field must end with one of the following: :suffixes.",
   in: "This field must be one of the following: :values.",
   not_in: "This field must not be one of the following: :values.",
-  same: "This field must be the same as :field.",
+  same: "This field must match :other.",
   pattern: "This field format is invalid.",
   regex: "This field format is invalid.",
   not_regex: "This field format is invalid.",
   min: "This field must be greater than or equal to :min.",
   max: "This field must be less than or equal to :max.",
   between: "This field must be between :min and :max.",
-  size: "This file size must be equal to :size.",
-  min_size: "This file size must be greater than or equal to :size.",
-  max_size: "This file size must be less than or equal to :size.",
-  between_size: "This file size must be between :min and :max.",
-  mimes: "This field must have a valid file :values.",
-  unique: "This field must be unique.",
+  size: "This field must be :size kilobytes.",
+  min_size: "This field must be greater than or equal to :size kilobytes.",
+  max_size: "This field must be less than or equal to :size kilobytes.",
+  between_size: "This field must be between :min and :max kilobytes.",
+  mimes: "This field must be a file of type: :values.",
+  uuid: "This field must be a valid UUID.",
+  server: "This field must be valid.",
 };
 
 export const ZkValidatorRules = {
@@ -222,333 +268,674 @@ export const ZkValidatorRules = {
   // Default rules
   nullable: {
     handler: function (element) {
-      // Check if value is empty or null
-      return element.value === null || element.value === undefined || element.value.trim() === '';
+      return ZkValidatorUtils.isEmpty(element.value);
     },
     message: function (element, message = "") {
-      return message;
-    },
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.nullable)
+        .replace(/:field|:attribute/g, label);
+    }
   },
   required: {
     handler: function (element) {
-      // Check checkbox, radio, select, file, and other input types
-      if (["checkbox", "radio"].includes(element.type)) {
-        const inputs = document.getElementsByName(element.name);
-        return Array.from(inputs).some((input) => input.checked);
-      } else if (element.type === "file") {
-        return element.files.length > 0;
-      } else if (element.tagName === "SELECT") {
-        // Check multiple select and check if at least one option is selected and value is not empty
-        if (element.multiple) {
-          return Array.from(element.options).some(
-            (option) => option.selected && option.value.trim() !== ""
-          );
-        }
+      const type = element.type;
+      const tag = element.tagName;
+
+      // Handle checkbox/radio group
+      if (["checkbox", "radio"].includes(type)) {
+        const group = document.getElementsByName(element.name);
+        return Array.from(group).some((el) => el.checked);
       }
-      return element.value.trim() !== "";
+
+      // Handle file input
+      if (type === "file") {
+        return element.files.length > 0;
+      }
+
+      // Handle select (single or multiple)
+      if (tag === "SELECT") {
+        return Array.from(element.selectedOptions || []).some(opt => opt.value.trim() !== "");
+      }
+
+      // Default input/textarea case
+      return element.value?.trim() !== "";
     },
-    message: function (element, message = "") {
-      return message || ZkValidatorMessages.required;
+    message(element, message = "") {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.required)
+        .replace(/:field|:attribute/g, label);
     },
   },
   required_if: {
     handler: function (element, field, operator, value = "") {
-      // Check operator include "=", "==", "===", !=, >, <, >=, and <=
-      if (!["=", "==", "===", "!=", ">", "<", ">=", "<="].includes(operator)) {
+      const validOps = ["=", "==", "===", "!=", ">", "<", ">=", "<="];
+
+      // Support optional operator (default '=' if skipped)
+      if (!validOps.includes(operator)) {
         value = operator;
         operator = "=";
       }
-      const _self = ZkValidatorRules;
-      const matchField =
-        document.getElementById(field) ||
-        document.querySelector(`[name="${field}"]`);
-      if (matchField == null) {
-        return false;
+
+      const target = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
+      if (!target) return false;
+
+      let targetValue;
+
+      switch (target.type) {
+        case "checkbox":
+        case "radio":
+          const selected = Array.from(document.getElementsByName(target.name)).filter(i => i.checked);
+          targetValue = selected.map(i => i.value);
+          break;
+        case "file":
+          targetValue = target.files.length;
+          break;
+        default:
+          if (target.tagName === "SELECT") {
+            targetValue = Array.from(target.selectedOptions).map(o => o.value.trim());
+          } else {
+            targetValue = target.value.trim();
+          }
       }
-      let isRequired = false;
-      // Check checkbox, radio, select and other input types
-      if (["checkbox", "radio"].includes(matchField.type)) {
-        const inputs = document.getElementsByName(matchField.name);
-        isRequired = Array.from(inputs).some(
-          (input) => input.checked && ZkValidatorUtils.checkCondition(input.value, operator, value)
-        );
-      } else if (matchField.type === "file") {
-        isRequired = matchField.files.length > 0;
-      } else if (matchField.tagName === "SELECT") {
-        // Check multiple select and check if at least one option is selected and value is not empty
-        isRequired = Array.from(matchField.options).some(
-          (option) => option.selected && ZkValidatorUtils.checkCondition(option.value.trim(), operator, value)
-        );
-      } else {
-        isRequired =
-          (value === "" || value === undefined || value === null) &&
-          matchField.value.trim() !== "";
-        if (value !== "" && ZkValidatorUtils.checkCondition(matchField.value.trim(), operator, value)) {
-          isRequired = true;
-        }
-      }
-      return isRequired ? _self.required.handler(element) : true;
+
+      const conditionMet = Array.isArray(targetValue)
+        ? targetValue.some(val => ZkValidatorUtils.checkCondition(val, operator, value))
+        : ZkValidatorUtils.checkCondition(targetValue, operator, value);
+
+      return conditionMet ? ZkValidatorRules.required.handler(element) : true;
     },
     message: function (element, message = "", field, value) {
-      const matchField = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
-      if (matchField) {
-        const label = (matchField.id) ? document.querySelector(`label[for="${matchField.id}"]`) : null;
-        field = (label) ? label.innerText : matchField.name;
-      }
-      return message || ZkValidatorMessages.required_if.replace(":field", field).replace(":value", value);
+      const label = ZkValidatorUtils.getLabelText(element);
+      const other = ZkValidatorUtils.getLabelText(field);
+      return (message || ZkValidatorMessages.required_if)
+        .replace(/:field|:attribute/g, label)
+        .replace(":other", other)
+        .replace(":value", value);
+    },
+  },
+  required_with: {
+    handler: function (element, ...fields) {
+      // Only required if at least one of the given fields is present and not empty.
+      const anyFieldFilled = fields.some(field => {
+        const target = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
+        if (!target) return false;
+        if (target.type === "checkbox" || target.type === "radio") {
+          return Array.from(document.getElementsByName(target.name)).some(i => i.checked);
+        }
+        if (target.tagName === "SELECT") {
+          return Array.from(target.selectedOptions || []).some(opt => opt.value.trim() !== "");
+        }
+        return target.value?.trim() !== "";
+      });
+      // If any field is filled, check if the current element is filled
+      return anyFieldFilled ? ZkValidatorRules.required.handler(element) : true;
+    },
+    message: function (element, message = "", ...fields) {
+      const label = ZkValidatorUtils.getLabelText(element);
+      const other = fields.map(field => ZkValidatorUtils.getLabelText(field)).join(", ");
+      return (message || ZkValidatorMessages.required_with)
+        .replace(/:field|:attribute/g, label)
+        .replace(":values", other);
+    },
+  },
+  required_with_all: {
+    handler: function (element, ...fields) {
+      // Only required if all of the given fields are present and not empty.
+      const allFieldsFilled = fields.every(field => {
+        const target = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
+        if (!target) return false;
+        if (target.type === "checkbox" || target.type === "radio") {
+          return Array.from(document.getElementsByName(target.name)).some(i => i.checked);
+        }
+        if (target.tagName === "SELECT") {
+          return Array.from(target.selectedOptions || []).some(opt => opt.value.trim() !== "");
+        }
+        return target.value?.trim() !== "";
+      });
+      // If all fields are filled, check if the current element is filled
+      return allFieldsFilled ? ZkValidatorRules.required.handler(element) : true;
+    },
+    message: function (element, message = "", ...fields) {
+      const label = ZkValidatorUtils.getLabelText(element);
+      const other = fields.map(field => ZkValidatorUtils.getLabelText(field)).join(", ");
+      return (message || ZkValidatorMessages.required_with_all)
+        .replace(/:field|:attribute/g, label)
+        .replace(":values", other);
+    },
+  },
+  required_without: {
+    handler: function (element, ...fields) {
+      // Only required if at least one of the given fields is missing or empty.
+      const anyFieldFilled = fields.some(field => {
+        const target = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
+        if (!target) return false;
+        if (target.type === "checkbox" || target.type === "radio") {
+          return Array.from(document.getElementsByName(target.name)).some(i => i.checked);
+        }
+        if (target.tagName === "SELECT") {
+          return Array.from(target.selectedOptions || []).some(opt => opt.value.trim() !== "");
+        }
+        return target.value?.trim() !== "";
+      });
+      // If any field is filled, check if the current element is filled
+      return !anyFieldFilled ? ZkValidatorRules.required.handler(element) : true;
+    },
+    message: function (element, message = "", ...fields) {
+      const label = ZkValidatorUtils.getLabelText(element);
+      const other = fields.map(field => ZkValidatorUtils.getLabelText(field)).join(", ");
+      return (message || ZkValidatorMessages.required_without)
+        .replace(/:field|:attribute/g, label)
+        .replace(":values", other);
+    },
+  },
+  required_without_all: {
+    handler: function (element, ...fields) {
+      // Only required if all of the given fields are missing or empty.
+      const allFieldsFilled = fields.every(field => {
+        const target = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
+        if (!target) return false;
+        if (target.type === "checkbox" || target.type === "radio") {
+          return Array.from(document.getElementsByName(target.name)).some(i => i.checked);
+        }
+        if (target.tagName === "SELECT") {
+          return Array.from(target.selectedOptions || []).some(opt => opt.value.trim() !== "");
+        }
+        return target.value?.trim() !== "";
+      });
+      // If all fields are filled, check if the current element is filled
+      return !allFieldsFilled ? ZkValidatorRules.required.handler(element) : true;
+    },
+    message: function (element, message = "", ...fields) {
+      const label = ZkValidatorUtils.getLabelText(element);
+      const other = fields.map(field => ZkValidatorUtils.getLabelText(field)).join(", ");
+      return (message || ZkValidatorMessages.required_without_all)
+        .replace(/:field|:attribute/g, label)
+        .replace(":values", other);
     },
   },
   email: {
     handler: function (element) {
-      // Check if value is empty or match email pattern
+      // Allow empty input or Standard email regex: local@domain.tld
       return (
-        element.value.trim() === "" ||
-        element.value.match(/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/)
+        ZkValidatorUtils.isEmpty(element.value) ||
+        /^[\w.-]+@([\w-]+\.)+[a-zA-Z]{2,}$/.test(element.value)
       );
     },
     message: function (element, message = "") {
-      return message || ZkValidatorMessages.email;
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.email)
+        .replace(/:field|:attribute/g, label);
     },
   },
   numeric: {
     handler: function (element) {
-      // Check if value is empty or match numeric pattern
+      // Allow empty input or Standard numeric regex: -123.45 or 123.45
       return (
-        element.value.trim() === "" || element.value.match(/^-?\d*\.?\d+$/)
+        ZkValidatorUtils.isEmpty(element.value) ||
+        /^-?\d+(\.\d+)?$/.test(element.value)
       );
     },
     message: function (element, message = "") {
-      return message || ZkValidatorMessages.numeric;
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.numeric)
+        .replace(/:field|:attribute/g, label);
     },
   },
   integer: {
     handler: function (element) {
-      // Check if value is empty or match integer pattern
-      return element.value.trim() === "" || element.value.match(/^-?\d+$/);
+      // Allow empty input or Standard integer regex: -123 or 123
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        /^-?\d+$/.test(element.value)
+      );
     },
     message: function (element, message = "") {
-      return message || ZkValidatorMessages.integer;
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.integer)
+        .replace(/:field|:attribute/g, label);
+    },
+  },
+  digits: {
+    handler: function (element, digits) {
+      // Allow empty input or check if the value is exactly the specified number of digits
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        (new RegExp(`^\\d{${digits}}$`)).test(element.value)
+      );
+    },
+    message: function (element, message = "", digits) {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.digits)
+        .replace(/:field|:attribute/g, label)
+        .replace(":digits", digits);
+    },
+  },
+  digits_between: {
+    handler: function (element, min, max) {
+      // Allow empty input or check if the value is between the specified range of digits
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        (new RegExp(`^\\d{${min},${max}}$`)).test(element.value)
+      );
+    },
+    message: function (element, message = "", min, max) {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.digits_between)
+        .replace(/:field|:attribute/g, label)
+        .replace(":min", min)
+        .replace(":max", max);
     },
   },
   alpha: {
     handler: function (element) {
-      // Check if value is empty or match alphabetic pattern
-      return element.value.trim() === "" || element.value.match(/^[a-zA-Z]+$/);
+      // Allow empty input or Standard alpha regex: a-zA-Z
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        /^[a-zA-Z]+$/.test(element.value)
+      );
     },
     message: function (element, message = "") {
-      return message || ZkValidatorMessages.alpha;
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.alpha)
+        .replace(/:field|:attribute/g, label);
     },
   },
   alpha_num: {
     handler: function (element) {
-      // Check if value is empty or match alphanumeric pattern
+      // Allow empty input or Standard alpha numeric regex: a-zA-Z0-9
       return (
-        element.value.trim() === "" || element.value.match(/^[a-zA-Z0-9]+$/)
+        ZkValidatorUtils.isEmpty(element.value) ||
+        /^[a-zA-Z0-9]+$/.test(element.value)
       );
     },
     message: function (element, message = "") {
-      return message || ZkValidatorMessages.alpha_num;
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.alpha_num)
+        .replace(/:field|:attribute/g, label);
     },
   },
   alpha_dash: {
     handler: function (element) {
-      // Check if value is empty or match alpha dash pattern
+      // Allow empty input or Standard alpha dash regex: a-zA-Z0-9_-
       return (
-        element.value.trim() === "" || element.value.match(/^[a-zA-Z0-9_-]+$/)
+        ZkValidatorUtils.isEmpty(element.value) ||
+        /^[a-zA-Z0-9_-]+$/.test(element.value)
       );
     },
     message: function (element, message = "") {
-      return message || ZkValidatorMessages.alpha_dash;
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.alpha_dash)
+        .replace(/:field|:attribute/g, label);
     },
   },
   url: {
     handler: function (element) {
+      // Allow empty input or Standard URL regex: http(s)://www.example.com
+      if (ZkValidatorUtils.isEmpty(element.value)) return true;
+
       try {
-        new URL(element.value.trim());
+        new URL(element.value);
         return true;
       } catch {
-        if (element.value.trim() === "") return true;
         return false;
       }
     },
     message: function (element, message = "") {
-      return message || ZkValidatorMessages.url;
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.url)
+        .replace(/:field|:attribute/g, label);
     },
   },
   date: {
     handler: function (element, format = "YYYY-MM-DD") {
-      const value = element.value.trim();
-      if (!value) return true; // Return true for empty input (no validation required)
+      // Allow empty input
+      if (ZkValidatorUtils.isEmpty(element.value)) return true;
+
       // Check format is true or not
       format = format === "true" ? "YYYY-MM-DD" : format;
 
-      const parseDate = ZkValidatorUtils.parseDate(value, format);
+      const parseDate = ZkValidatorUtils.parseDate(element.value, format);
       if (!parseDate || isNaN(parseDate.date.getTime())) return false;
 
       // Check if the date is valid
       const { year, month, day, date } = parseDate;
-      const isValidDate = date.getFullYear() === year &&
+
+      const isValidDate = (
+        date.getFullYear() === year &&
         date.getMonth() + 1 === month &&
-        date.getDate() === day;
+        date.getDate() === day
+      );
       // Check if the date is valid
       return isValidDate;
     },
-    message: function (element, message = "") {
-      return message || ZkValidatorMessages.date;
+    message: function (element, message = "", format = "YYYY-MM-DD") {
+      const label = ZkValidatorUtils.getLabelText(element);
+      format = format === "true" ? "YYYY-MM-DD" : format;
+      return (message || ZkValidatorMessages.date)
+        .replace(/:field|:attribute/g, label)
+        .replace(":format", format);
+    },
+  },
+  date_between: {
+    handler: function (element, minDate, maxDate, format = "YYYY-MM-DD") {
+      // Allow empty input
+      if (ZkValidatorUtils.isEmpty(element.value)) return true;
+
+      // Parse input date
+      const parsed = ZkValidatorUtils.parseDate(element.value, format);
+      if (!parsed || isNaN(parsed.date.getTime())) return false;
+
+      const inputTime = parsed.date.getTime();
+
+      // Parse min and max
+      const minParsed = ZkValidatorUtils.parseDate(minDate);
+      const maxParsed = ZkValidatorUtils.parseDate(maxDate);
+      if (!minParsed || !maxParsed) return false;
+
+      const minTime = minParsed.date.getTime();
+      const maxTime = maxParsed.date.getTime();
+
+      return inputTime >= minTime && inputTime <= maxTime;
+    },
+    message: function (element, message = "", minDate, maxDate, format = "YYYY-MM-DD") {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.date_between)
+        .replace(/:field|:attribute/g, label)
+        .replace(":min", minDate)
+        .replace(":max", maxDate)
+        .replace(":format", format);
     },
   },
   date_before: {
     handler: function (element, date, format = "YYYY-MM-DD") {
-      // Check if value is empty or is a date before the specified date
-      const inputValue = element.value.trim();
-      if (!inputValue) return true; // Return true for empty input (no validation required)
+      // Allow empty input
+      if (ZkValidatorUtils.isEmpty(element.value)) return true;
 
-      const inputDate = ZkValidatorUtils.parseDate(inputValue, format);
+      const inputDate = ZkValidatorUtils.parseDate(element.value, format);
       if (!inputDate || isNaN(inputDate.date.getTime())) return false;
 
       const compareDate = ZkValidatorUtils.getComparisonDate(date);
       if (!compareDate || isNaN(compareDate.getTime())) return false;
-
-      inputDate.date.setHours(0, 0, 0, 0);
-      compareDate.setHours(0, 0, 0, 0);
 
       // Check if inputDate is strictly before compareDate
       return inputDate.date.getTime() < compareDate.getTime();
     },
-    message: function (element, message = "", date) {
-      message = message || ZkValidatorMessages.date_before;
-      return message.replace(":date", date);
+    message: function (element, message = "", date, format = "YYYY-MM-DD") {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.date_before)
+        .replace(/:field|:attribute/g, label)
+        .replace(":date", date)
+        .replace(":format", format);
     },
   },
-  date_after: {
+  before_or_equal: {
     handler: function (element, date, format = "YYYY-MM-DD") {
-      // Check if value is empty or match date after pattern
-      const inputValue = element.value.trim();
-      if (!inputValue) return true; // Return true for empty input (no validation required)
+      // Allow empty input
+      if (ZkValidatorUtils.isEmpty(element.value)) return true;
 
-      const inputDate = ZkValidatorUtils.parseDate(inputValue, format);
+      const inputDate = ZkValidatorUtils.parseDate(element.value, format);
       if (!inputDate || isNaN(inputDate.date.getTime())) return false;
 
       const compareDate = ZkValidatorUtils.getComparisonDate(date);
       if (!compareDate || isNaN(compareDate.getTime())) return false;
 
-      inputDate.date.setHours(0, 0, 0, 0);
-      compareDate.setHours(0, 0, 0, 0);
+      // Check if inputDate is before or equal to compareDate
+      return inputDate.date.getTime() <= compareDate.getTime();
+    },
+    message: function (element, message = "", date, format = "YYYY-MM-DD") {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.before_or_equal)
+        .replace(/:field|:attribute/g, label)
+        .replace(":date", date)
+        .replace(":format", format);
+    },
+  },
+  date_after: {
+    handler: function (element, date, format = "YYYY-MM-DD") {
+      // Allow empty input
+      if (ZkValidatorUtils.isEmpty(element.value)) return true;
+
+      const inputDate = ZkValidatorUtils.parseDate(element.value, format);
+      if (!inputDate || isNaN(inputDate.date.getTime())) return false;
+
+      const compareDate = ZkValidatorUtils.getComparisonDate(date);
+      if (!compareDate || isNaN(compareDate.getTime())) return false;
 
       // Check if inputDate is strictly after compareDate
       return inputDate.date.getTime() > compareDate.getTime();
     },
-    message: function (element, message = "", date) {
-      message = message || ZkValidatorMessages.date_after;
-      return message.replace(":date", date);
+    message: function (element, message = "", date, format = "YYYY-MM-DD") {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.date_after)
+        .replace(/:field|:attribute/g, label)
+        .replace(":date", date)
+        .replace(":format", format);
     },
+  },
+  after_or_equal: {
+    handler: function (element, date, format = "YYYY-MM-DD") {
+      // Allow empty input
+      if (ZkValidatorUtils.isEmpty(element.value)) return true;
+
+      const inputDate = ZkValidatorUtils.parseDate(element.value, format);
+      if (!inputDate || isNaN(inputDate.date.getTime())) return false;
+
+      const compareDate = ZkValidatorUtils.getComparisonDate(date);
+      if (!compareDate || isNaN(compareDate.getTime())) return false;
+
+      // Check if inputDate is after or equal to compareDate
+      return inputDate.date.getTime() >= compareDate.getTime();
+    },
+    message: function (element, message = "", date, format = "YYYY-MM-DD") {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.after_or_equal)
+        .replace(/:field|:attribute/g, label)
+        .replace(":date", date)
+        .replace(":format", format);
+    }
   },
   date_format: {
     handler: function (element, format) {
-      const inputValue = element.value.trim();
-      if (!inputValue) return true; // Return true for empty input (no validation required)
+      // Allow empty input
+      if (ZkValidatorUtils.isEmpty(element.value)) return true;
 
-      const parseDate = ZkValidatorUtils.parseDate(inputValue, format);
+      const parseDate = ZkValidatorUtils.parseDate(element.value, format);
       if (!parseDate || isNaN(parseDate.date.getTime())) return false;
 
       const { year, month, day, date } = parseDate;
 
-      const isValidDate =
+      const isValidDate = (
         date.getFullYear() === year &&
         date.getMonth() + 1 === month &&
-        date.getDate() === day;
+        date.getDate() === day
+      );
 
       return isValidDate;
     },
     message: function (element, message = "", format) {
-      message = message || ZkValidatorMessages.date_format;
-      return message.replace(":format", format);
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.date_format)
+        .replace(/:field|:attribute/g, label)
+        .replace(":format", format);
+    },
+  },
+  json: {
+    handler: function (element) {
+      // Allow empty input or check if the value is valid JSON
+      if (ZkValidatorUtils.isEmpty(element.value)) return true;
+
+      try {
+        const parsed = JSON.parse(element.value.trim());
+        return typeof parsed === "object";
+      } catch {
+        return false;
+      }
+    },
+    message: function (element, message = "") {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.json)
+        .replace(/:field|:attribute/g, label);
+    },
+  },
+  ip: {
+    handler: function (element, version = "all") {
+      // Allow empty input or check if the value is a valid IP address
+      if (ZkValidatorUtils.isEmpty(element.value)) return true;
+
+      // Check version is true or not
+      version = version === "true" ? "all" : version;
+
+      const ipv4 = /^(25[0-5]|2[0-4]\d|1?\d{1,2})(\.(25[0-5]|2[0-4]\d|1?\d{1,2})){3}$/;
+      const ipv6 = /^(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}$|^::(?:[a-fA-F0-9]{1,4}:){0,6}[a-fA-F0-9]{1,4}$/;
+
+      if (version === "all") {
+        return ipv4.test(element.value) || ipv6.test(element.value);
+      }
+      if (version === "v4") {
+        return ipv4.test(element.value);
+      }
+      if (version === "v6") {
+        return ipv6.test(element.value);
+      }
+      return false;
+    },
+    message: function (element, message = "", version = "all") {
+      const label = ZkValidatorUtils.getLabelText(element);
+      version = version === "true" ? "all" : version;
+      if (version === "all") {
+        version = "IP";
+      } else if (version === "v4") {
+        version = "IPv4";
+      } else if (version === "v6") {
+        version = "IPv6";
+      }
+      return (message || ZkValidatorMessages.ip)
+        .replace(/:field|:attribute/g, label)
+        .replace(":version", version);
     },
   },
   contains: {
     handler: function (element, value) {
-      // Check if value is empty or contains the specified value
-      return element.value.trim() === "" || element.value.includes(value);
+      // Allow empty input or check if the value contains the specified value
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        element.value.includes(value)
+      );
     },
     message: function (element, message = "", value) {
-      message = message || ZkValidatorMessages.contains;
-      return message.replace(":contains", value);
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.contains)
+        .replace(/:field|:attribute/g, label)
+        .replace(":contains", value);
     },
   },
   boolean: {
     handler: function (element) {
-      // Check if value is empty or is a boolean value
-      const val = (element.value + "").trim().toLowerCase();
-      return ["true", "false", "0", "1"].includes(val);
-      // return [true, false, 'true', 'false', 0, 1, '0', '1'].includes(element.value.trim());
+      // Check if value is empty or is a boolean
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        ["true", "false", "1", "0"].includes(element.value)
+      );
     },
     message: function (element, message = "") {
-      return message || ZkValidatorMessages.boolean;
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.boolean)
+        .replace(/:field|:attribute/g, label);
     },
   },
   minlength: {
     handler: function (element, length) {
-      // Check if value is empty or length is greater than or equal to the specified length
-      return element.value.trim() === "" || element.value.length >= length;
+      // Allow empty input or check if the value is at least the specified length
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        element.value.length >= length
+      );
     },
     message: function (element, message = "", length) {
-      message = message || ZkValidatorMessages.minlength;
-      return message.replace(":length", length);
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.minlength)
+        .replace(/:field|:attribute/g, label)
+        .replace(":length", length);
     },
   },
   maxlength: {
     handler: function (element, length) {
-      // Check if value is empty or length is less than or equal to the specified length
-      return element.value.trim() === "" || element.value.length <= length;
+      // Allow empty input or check if the value is at most the specified length
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        element.value.length <= length
+      );
     },
     message: function (element, message = "", length) {
-      message = message || ZkValidatorMessages.maxlength;
-      return message.replace(":length", length);
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.maxlength)
+        .replace(/:field|:attribute/g, label)
+        .replace(":length", length);
     },
   },
   starts_with: {
-    handler: function (element, prefix) {
-      // Check if value is empty or starts with the specified prefix
-      return element.value.trim() === "" || element.value.startsWith(prefix);
+    handler: function (element, ...prefixes) {
+      // Allow empty input or check if the value starts with any of the specified prefixes
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        prefixes.some(prefix => element.value.startsWith(prefix))
+      );
     },
-    message: function (element, message = "", prefix) {
-      message = message || ZkValidatorMessages.starts_with;
-      return message.replace(":prefix", prefix);
+    message: function (element, message = "", ...prefixes) {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.starts_with)
+        .replace(/:field|:attribute/g, label)
+        .replace(":prefixes", prefixes.join(", "));
     },
   },
   ends_with: {
-    handler: function (element, suffix) {
-      // Check if value is empty or ends with the specified suffix
-      return element.value.trim() === "" || element.value.endsWith(suffix);
+    handler: function (element, ...suffixes) {
+      // Allow empty input or check if the value ends with any of the specified suffixes
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        suffixes.some(suffix => element.value.endsWith(suffix))
+      );
     },
-    message: function (element, message = "", suffix) {
-      message = message || ZkValidatorMessages.ends_with;
-      return message.replace(":suffix", suffix);
+    message: function (element, message = "", ...suffixes) {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.ends_with)
+        .replace(/:field|:attribute/g, label)
+        .replace(":suffixes", suffixes.join(", "));
     },
   },
   in: {
     handler: function (element, ...values) {
-      // Check if value is empty or is in the specified values
-      return element.value.trim() === "" || values.includes(element.value);
+      // Allow empty input or check if the value is in the specified values
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        values.includes(element.value)
+      );
     },
     message: function (element, message = "", ...values) {
-      message = message || ZkValidatorMessages.in;
-      return message.replace(":values", values.join(", "));
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.in)
+        .replace(/:field|:attribute/g, label)
+        .replace(":values", values.join(", "));
     },
   },
   not_in: {
     handler: function (element, ...values) {
-      // Check if value is empty or is not in the specified values
-      return element.value.trim() === "" || !values.includes(element.value);
+      // Allow empty input or check if the value is not in the specified values
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        !values.includes(element.value)
+      );
     },
     message: function (element, message = "", values) {
-      message = message || ZkValidatorMessages.not_in;
-      return message.replace(":values", values.join(", "));
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.not_in)
+        .replace(/:field|:attribute/g, label)
+        .replace(":values", values.join(", "));
     },
   },
   same: {
     handler: function (element, field) {
-      // same the value of the specified field
+      // Check if the value is the same as the specified field
       const sameField = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
       if (sameField == null) {
         return false;
@@ -556,125 +943,159 @@ export const ZkValidatorRules = {
       return element.value === sameField.value;
     },
     message: function (element, message = "", field) {
-      const sameField = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
-      if (sameField) {
-        const label = (sameField.id) ? document.querySelector(`label[for="${sameField.id}"]`) : null;
-        field = (label) ? label.innerText : sameField.name;
-      }
-      message = message || ZkValidatorMessages.same;
-      return message.replace(":field", field);
+      const label = ZkValidatorUtils.getLabelText(element);
+      const other = ZkValidatorUtils.getLabelText(field);
+      return (message || ZkValidatorMessages.same)
+        .replace(/:field|:attribute/g, label)
+        .replace(":other", other);
     },
   },
   pattern: {
     handler: function (element, pattern) {
-      // Check if value is empty or match the specified pattern
-      const regex = new RegExp(pattern);
-      return element.value.trim() === "" || regex.test(element.value);
+      // Allow empty input or check if the value matches the specified pattern
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        (new RegExp(pattern)).test(element.value)
+      );
     },
-    message: function (element, message = "") {
-      return message || ZkValidatorMessages.pattern;
+    message: function (element, message = "", pattern) {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.pattern)
+        .replace(/:field|:attribute/g, label)
+        .replace(":pattern", pattern);
     },
   },
   regex: {
     handler: function (element, pattern) {
-      // Check if value is empty or match the specified regex pattern - remove slashes from regex
-      const regex = new RegExp(pattern.replace(/^\/|\/$/g, ""));
-      return element.value.trim() === "" || regex.test(element.value);
+      // Allow empty input or check if the value matches the specified regex pattern - remove slashes from regex
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        (new RegExp(pattern.replace(/^\/|\/$/g, ""))).test(element.value)
+      );
     },
-    message: function (element, message = "") {
-      return message || ZkValidatorMessages.regex;
+    message: function (element, message = "", pattern) {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.regex)
+        .replace(/:field|:attribute/g, label)
+        .replace(":pattern", pattern);
     },
   },
   not_regex: {
     handler: function (element, pattern) {
-      // Check if value is empty or does not match the specified regex pattern - remove slashes from regex
-      const regex = new RegExp(pattern.replace(/^\/|\/$/g, ""));
-      return element.value.trim() === "" || !regex.test(element.value);
+      // Allow empty input or check if the value does not match the specified regex pattern - remove slashes from regex
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        !(new RegExp(pattern.replace(/^\/|\/$/g, ""))).test(element.value)
+      );
     },
-    message: function (element, message = "") {
-      return message || ZkValidatorMessages.not_regex;
+    message: function (element, message = "", pattern) {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.not_regex)
+        .replace(/:field|:attribute/g, label)
+        .replace(":pattern", pattern);
     },
   },
   min: {
     handler: function (element, min) {
-      // Check checkbox, select and file
-      if (["checkbox"].includes(element.type)) {
+      // Allow empty input or check if the value is at least the specified min value
+
+      // Handle checkbox or radio group
+      if (element.type === "checkbox" || element.type === "radio") {
         const inputs = document.getElementsByName(element.name);
         return Array.from(inputs).filter((input) => input.checked).length >= min;
-      } else if (element.tagName === "SELECT") {
-        // Check multiple select and check if at least the specified min options are selected
-        if (element.multiple) {
-          return Array.from(element.options).filter(
-            (option) => option.selected && option.value.trim() !== ""
-          ).length >= min;
-        }
-      } else if (element.type === "file") {
+      }
+
+      // Handle select
+      if (element.tagName === "SELECT") {
+        return Array.from(element.selectedOptions || []).length >= min;
+      }
+
+      // Handle file input
+      if (element.type === "file") {
         return element.files.length >= min;
       }
-      // Check if value is empty or is greater than or equal to the specified min value
-      return element.value.trim() === "" || parseFloat(element.value) >= min;
+
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        parseFloat(element.value) >= min
+      );
     },
     message: function (element, message = "", min) {
-      message = message || ZkValidatorMessages.min;
-      return message.replace(":min", min);
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.min)
+        .replace(/:field|:attribute/g, label)
+        .replace(":min", min);
     },
   },
   max: {
     handler: function (element, max) {
-      // Check checkbox, select and file
-      if (["checkbox"].includes(element.type)) {
+      // Allow empty input or check if the value is at most the specified max value
+
+      // Handle checkbox or radio group
+      if (element.type === "checkbox" || element.type === "radio") {
         const inputs = document.getElementsByName(element.name);
         return Array.from(inputs).filter((input) => input.checked).length <= max;
-      } else if (element.tagName === "SELECT") {
-        // Check multiple select and check if at most the specified max options are selected
-        if (element.multiple) {
-          return Array.from(element.options).filter(
-            (option) => option.selected && option.value.trim() !== ""
-          ).length <= max;
-        }
-      } else if (element.type === "file") {
+      }
+
+      // Handle select
+      if (element.tagName === "SELECT") {
+        return Array.from(element.selectedOptions || []).length <= max;
+      }
+
+      // Handle file input
+      if (element.type === "file") {
         return element.files.length <= max;
       }
-      // Check if value is empty or is less than or equal to the specified max value
-      return element.value.trim() === "" || parseFloat(element.value) <= max;
+
+      return (
+        ZkValidatorUtils.isEmpty(element.value) ||
+        parseFloat(element.value) <= max
+      );
     },
     message: function (element, message = "", max) {
-      message = message || ZkValidatorMessages.max;
-      return message.replace(":max", max);
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.max)
+        .replace(/:field|:attribute/g, label)
+        .replace(":max", max);
     },
   },
   between: {
     handler: function (element, min, max) {
-      // Check checkbox, select and file
-      if (["checkbox"].includes(element.type)) {
+      // Allow empty input or check if the value is between the specified min and max values
+
+      // Handle checkbox or radio group
+      if (element.type === "checkbox" || element.type === "radio") {
         const inputs = document.getElementsByName(element.name);
         const checked = Array.from(inputs).filter((input) => input.checked).length;
         return checked >= min && checked <= max;
-      } else if (element.tagName === "SELECT") {
-        // Check multiple select and check if the selected options are between the specified min and max values
-        if (element.multiple) {
-          const selected = Array.from(element.options).filter(
-            (option) => option.selected && option.value.trim() !== ""
-          ).length;
-          return selected >= min && selected <= max;
-        }
-      } else if (element.type === "file") {
+      }
+      // Handle select
+      if (element.tagName === "SELECT") {
+        const selected = Array.from(element.selectedOptions || []).length;
+        return selected >= min && selected <= max;
+      }
+
+      // Handle file input
+      if (element.type === "file") {
         return element.files.length >= min && element.files.length <= max;
       }
-      // Check if value is empty or is between the specified min and max values
+
       return (
-        element.value.trim() === "" ||
+        ZkValidatorUtils.isEmpty(element.value) ||
         (parseFloat(element.value) >= min && parseFloat(element.value) <= max)
       );
     },
     message: function (element, message = "", min, max) {
-      message = message || ZkValidatorMessages.between;
-      return message.replace(":min", min).replace(":max", max);
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.between)
+        .replace(/:field|:attribute/g, label)
+        .replace(":min", min)
+        .replace(":max", max);
     },
   },
   size: {
     handler: function (element, size) {
-      // Check if value is empty or file size is equal to the specified size
+      // Allow empty or check if the file size is equal to the specified size
       if (element.files.length === 0) return true;
       const expectedSize = parseFloat(size); // in KB
       for (let i = 0; i < element.files.length; i++) {
@@ -686,13 +1107,15 @@ export const ZkValidatorRules = {
       return true;
     },
     message: function (element, message = "", size) {
-      message = message || ZkValidatorMessages.size;
-      return message.replace(":size", size);
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.size)
+        .replace(/:field|:attribute/g, label)
+        .replace(":size", size);
     },
   },
   min_size: {
     handler: function (element, size) {
-      // Check if value is empty or file size is greater then the specified size
+      // Allow empty or check if the file size is greater than or equal to the specified size
       if (element.files.length === 0) return true;
       const minSize = parseFloat(size); // in KB
       for (let i = 0; i < element.files.length; i++) {
@@ -704,13 +1127,15 @@ export const ZkValidatorRules = {
       return true;
     },
     message: function (element, message = "", size) {
-      message = message || ZkValidatorMessages.min_size;
-      return message.replace(":size", size);
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.min_size)
+        .replace(/:field|:attribute/g, label)
+        .replace(":size", size);
     },
   },
   max_size: {
     handler: function (element, size) {
-      // Check if value is empty or file size is less than the specified size
+      // Allow empty or check if the file size is less than or equal to the specified size
       if (element.files.length === 0) return true;
       const maxSize = parseFloat(size); // in KB
       for (let i = 0; i < element.files.length; i++) {
@@ -722,19 +1147,20 @@ export const ZkValidatorRules = {
       return true;
     },
     message: function (element, message = "", size) {
-      message = message || ZkValidatorMessages.max_size;
-      return message.replace(":size", size);
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.max_size)
+        .replace(/:field|:attribute/g, label)
+        .replace(":size", size);
     },
   },
   between_size: {
     handler: function (element, min, max) {
-      // Check if value is empty or file size is between the specified min and max values
+      // Allow empty or check if the file size is between the specified min and max values
       if (element.files.length === 0) return true;
       const minSize = parseFloat(min); // in KB
       const maxSize = parseFloat(max); // in KB
       for (let i = 0; i < element.files.length; i++) {
         const sizeInKB = parseFloat((element.files[i].size / 1024).toFixed(2));
-        // Check if the file size is between the specified min and max values
         if (sizeInKB < minSize || sizeInKB > maxSize) {
           return false;
         }
@@ -742,45 +1168,57 @@ export const ZkValidatorRules = {
       return true;
     },
     message: function (element, message = "", min, max) {
-      message = message || ZkValidatorMessages.between_size;
-      return message.replace(":min", min).replace(":max", max);
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.between_size)
+        .replace(/:field|:attribute/g, label)
+        .replace(":min", min)
+        .replace(":max", max);
     },
   },
   mimes: {
-    handler: function (element, ...mimes) {
-      // Check if value is empty or file type is in the specified mimes
+    handler: function (element, ...allowedExts) {
+      // Allow empty or check if the file type is in the allowed extensions
       if (element.files.length === 0) return true;
-      const validMimes = [];
-      mimes.forEach((mime) => {
-        const fileMime = ZkValidatorUtils.validMimeTypes[mime] ?? null;
-        if (fileMime) {
-          validMimes.push(fileMime);
+
+      const allowedMimes = ZkValidatorUtils.getMimeType(allowedExts);
+      for (let i = 0; i < element.files.length; i++) {
+        if (!allowedMimes.includes(element.files[i].type)) {
+          return false;
         }
-      });
-      if (element.files.length > 1) {
-        for (let i = 0; i < element.files.length; i++) {
-          if (!validMimes.includes(element.files[i].type)) {
-            return false;
-          }
-        }
-        return true;
       }
-      return validMimes.includes(element.files[0].type);
+      return true;
     },
     message: function (element, message = "", ...mimes) {
-      message = message || ZkValidatorMessages.mimes;
-      return message.replace(":values", mimes.join(", "));
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.mimes)
+        .replace(/:field|:attribute/g, label)
+        .replace(":values", mimes.join(", "));
     },
   },
-  unique: {
+  uuid: {
+    handler(element) {
+      // Allow empty input or check if the value is a valid UUID
+      if (ZkValidatorUtils.isEmpty(element.value)) return true;
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      return uuidPattern.test(element.value);
+    },
+    message(element, message = "") {
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.uuid)
+        .replace(/:field|:attribute/g, label);
+    }
+  },
+  server: {
     handler: async function (element, url, ...args) {
-      if (element.value.trim() === "") return true;
+      // Allow empty input
+      if (ZkValidatorUtils.isEmpty(element.value)) return true;
+
       // Abort previous request if needed
-      if (element._uniqueAbortController) {
-        element._uniqueAbortController.abort();
+      if (element._serverAbortController) {
+        element._serverAbortController.abort();
       }
       const controller = new AbortController();
-      element._uniqueAbortController = controller;
+      element._serverAbortController = controller;
 
       let body = new URLSearchParams({ [element.name]: element.value });
       if (args.length > 0) {
@@ -789,11 +1227,11 @@ export const ZkValidatorRules = {
         });
       }
 
-      ZkValidatorUtils.dispatchCustomEvent(element, "zk-unique-loading", {
+      ZkValidatorUtils.dispatchCustomEvent(element, "zk-server-loading", {
         url,
         body: body.toString(),
       });
-      element.classList.add("zk-unique-loading");
+      element.classList.add("zk-server-loading");
       try {
         const response = await fetch(url, {
           method: "POST",
@@ -802,7 +1240,7 @@ export const ZkValidatorRules = {
           signal: controller.signal,
         });
         const data = await response.json();
-        ZkValidatorUtils.dispatchCustomEvent(element, "zk-unique-success", {
+        ZkValidatorUtils.dispatchCustomEvent(element, "zk-server-success", {
           valid: data.valid,
           url,
           body: body.toString(),
@@ -810,23 +1248,25 @@ export const ZkValidatorRules = {
         return data.valid;
       } catch (err) {
         if (err.name === "AbortError") return false;
-        ZkValidatorUtils.dispatchCustomEvent(element, "zk-unique-error", {
+        ZkValidatorUtils.dispatchCustomEvent(element, "zk-server-error", {
           error,
           url,
           body: body.toString(),
         });
         return false;
       } finally {
-        ZkValidatorUtils.dispatchCustomEvent(element, "zk-unique-complete", {
+        ZkValidatorUtils.dispatchCustomEvent(element, "zk-server-complete", {
           url,
           body: body.toString(),
         });
-        element.classList.remove("zk-unique-loading");
-        element._uniqueAbortController = null;
+        element.classList.remove("zk-server-loading");
+        element._serverAbortController = null;
       }
     },
     message: function (element, message = "") {
-      return message || ZkValidatorMessages.unique;
+      const label = ZkValidatorUtils.getLabelText(element);
+      return (message || ZkValidatorMessages.server)
+        .replace(/:field|:attribute/g, label);
     },
   },
 };
@@ -1262,8 +1702,8 @@ export default class ZkValidator {
     this.fields = fields;
     this.rules = { ...ZkValidator.ZkValidatorRules, ...rules };
     this.messages = { ...ZkValidator.ZkValidatorMessages, ...messages };
-    this.errors = {};
     this.utils = ZkValidator.ZkValidatorUtils;
+    this.errors = {};
   }
 
   setCheckAllRules(checkAllRules) {

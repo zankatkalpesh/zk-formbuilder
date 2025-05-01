@@ -8,7 +8,7 @@ export class ZkErrorElement {
     }
 
     init() {
-        if (!this.error && !this.error.errors) return;
+        if (!this.error || !this.error.errors) return;
 
         // Start Error Wrapper
         // Before Error
@@ -565,7 +565,7 @@ export class ZkButtons {
 
     buildActions(context) {
         for (let action of this.buttons.actions) {
-            const element = this.formBuilder.createButtonInstance(action);
+            const element = this.formBuilder.createElementInstance(action);
             const content = element.render();
             if (content) context.appendChild(content);
         }
@@ -646,14 +646,24 @@ export default class ZkFormBuilder {
     subscribers = {};
     subscribersData = {};
 
-    constructor(options = {}) {
+    static root = (
+        typeof globalThis !== 'undefined' ? globalThis :
+            typeof window !== 'undefined' ? window :
+                typeof global !== 'undefined' ? global :
+                    {}
+    );
+
+    constructor(options = {}, validatorObj) {
         this.setOptions(options);
-        this.setValidatorObj(
-            typeof ZkFormValidator !== "undefined" && ZkFormValidator ||
-            (typeof window !== "undefined" && window?.ZkFormValidator) ||
-            (typeof window !== "undefined" && window?.ZkValidator?.ZkFormValidator) ||
+        const defaultValidator = (
+            validatorObj ||
+            (typeof ZkFormValidator !== "undefined" ? ZkFormValidator : null) ||
+            (typeof ZkValidator !== "undefined" && ZkValidator?.ZkFormValidator) ||
+            ZkFormBuilder.root?.ZkFormValidator ||
+            (ZkFormBuilder.root?.ZkValidator?.ZkFormValidator) ||
             null
-        );
+        )
+        this.setValidatorObj(defaultValidator);
         this.context = typeof document !== "undefined" && document.createDocumentFragment();
     }
 
@@ -830,22 +840,23 @@ export default class ZkFormBuilder {
 
     createElementInstance(fields, ...args) {
         if (!fields || !fields?.jsElement) return null;
-        const element = this[fields.jsElement] || ZkFormBuilder[fields.jsElement] || null;
-        if (!element) {
+
+        const elementClass =
+            this[fields.jsElement] ||
+            ZkFormBuilder[fields.jsElement] ||
+            ZkFormBuilder.root?.[fields.jsElement] || // Global fallback
+            null;
+
+        if (!elementClass) {
             console.error(`${fields.jsElement} class not found`);
             return null;
         }
-        return new element(fields, this, ...args);
-    }
-
-    createButtonInstance(buttons) {
-        if (!buttons || !buttons?.jsElement) return null;
-        const buttonElement = this[buttons.jsElement] || ZkFormBuilder[buttons.jsElement];
-        if (!buttonElement) {
-            console.error(`${buttons.jsElement} class not found`);
+        try {
+            return new elementClass(fields, this, ...args);
+        } catch (error) {
+            console.error(`Error instantiating ${fields.jsElement}:`, error);
             return null;
         }
-        return new buttonElement(buttons, this);
     }
 
     renderElement(context, element) {
