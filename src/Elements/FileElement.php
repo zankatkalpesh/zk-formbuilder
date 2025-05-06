@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Zk\FormBuilder\Elements;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Zk\FormBuilder\Helpers\WrapperBuilder;
@@ -348,32 +349,38 @@ class FileElement extends Element
     }
 
     /**
-     * Get files
-     * 
+     * Get files from storage
+     *
      * @return array
      */
-    public function getFiles()
+    public function getFiles(): array
     {
         $files = $this->getValue();
 
-        // Check if custom display function
+        // Use custom display function if set
         if (!empty($this->displayFunc)) {
-            $display = $this->displayFunc;
-            return $display($this, $files);
+            return call_user_func($this->displayFunc, $this, $files);
         }
 
-        if (empty($files)) return [];
-        $storage = Storage::disk($this->getOptions('disk'));
-        $path = $this->getOptions('path') . '/';
-        $filesPath = [];
-        if ($this->isMultiple()) {
-            foreach ((array) $files as $file) {
-                $filesPath[] = $storage->url($path . $file);
-            }
-        } else {
-            $filesPath[] = $storage->url($path . $files);
+        if (empty($files)) {
+            return [];
         }
-        return $filesPath;
+
+        $storage = Storage::disk($this->getOptions('disk'));
+        $path = rtrim($this->getOptions('path'), '/') . '/';
+
+        if ($this->isMultiple()) {
+            return collect((array) $files)
+                ->filter(fn($file) => !$file instanceof UploadedFile)
+                ->map(fn($file) => $storage->url($path . $file))
+                ->all();
+        }
+
+        if (!$files instanceof UploadedFile) {
+            return [$storage->url($path . $files)];
+        }
+
+        return [];
     }
 
     /**
@@ -388,6 +395,7 @@ class FileElement extends Element
 
         $arr['multiple'] = $this->isMultiple();
         $arr['files'] = $this->getFiles();
+        // $arr['options'] = $this->getOptions();
 
         return $arr;
     }
