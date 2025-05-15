@@ -40,14 +40,6 @@ interface Error
     public function getErrors(): array;
 
     /**
-     * Get config
-     * 
-     * @param string $key optional 
-     * @return mixed
-     */
-    public function getConfig($key = null);
-
-    /**
      * Get error position
      * 
      * @return string

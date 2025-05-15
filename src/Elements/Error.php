@@ -14,18 +14,18 @@ class Error implements ErrorContract
     use GeneralMethods;
 
     /**
-     * Component's name
-     * 
+     * Blade view component path.
+     *
      * @var string
      */
     public $component = 'formbuilder::error';
 
     /**
-     * Javascript Element
-     * 
+     * JavaScript handler/component name.
+     *
      * @var string
      */
-    public $jsElement = 'ZkErrorElement';
+    public $jsElement = 'ZkError';
 
     /** 
      * Error html tag name
@@ -45,12 +45,10 @@ class Error implements ErrorContract
      * Return new Error instance
      *
      * @param Element $element
-     * @param string $configPath
      * @param WrapperBuilder $wrapperBuilder
      */
     public function __construct(
         protected Element $element,
-        public $configPath,
         protected WrapperBuilder $wrapperBuilder
     ) {}
 
@@ -61,7 +59,7 @@ class Error implements ErrorContract
      */
     public function getComponent(): string
     {
-        return $this->getConfigByKey('component') ?? $this->component;
+        return $this->getConfig('component') ?? $this->component;
     }
 
     /**
@@ -71,7 +69,7 @@ class Error implements ErrorContract
      */
     public function getJsElement(): string
     {
-        return $this->getConfigByKey('jsElement') ?? $this->jsElement;
+        return $this->getConfig('jsElement') ?? $this->jsElement;
     }
 
     /**
@@ -81,7 +79,7 @@ class Error implements ErrorContract
      */
     public function getBefore()
     {
-        $before = $this->getConfigByKey('before') ?? '';
+        $before = $this->getConfig('before') ?? '';
 
         if (is_callable($before)) {
             $before = call_user_func($before, $this);
@@ -97,7 +95,7 @@ class Error implements ErrorContract
      */
     public function getAfter()
     {
-        $after = $this->getConfigByKey('after') ?? '';
+        $after = $this->getConfig('after') ?? '';
 
         if (is_callable($after)) {
             $after = call_user_func($after, $this);
@@ -113,29 +111,13 @@ class Error implements ErrorContract
      */
     public function getTagName(): string
     {
-        $tag = $this->getConfigByKey('tag');
+        $tag = $this->getConfig('tag');
 
         if (empty($tag)) {
             $tag = $this->tagName;
         }
 
         return $tag;
-    }
-
-    /**
-     * Get config
-     * 
-     * @return array
-     */
-
-    public function getConfig($key = null)
-    {
-        $config = config($this->configPath);
-        if ($key) {
-            return Arr::get($config, $key);
-        }
-
-        return $config;
     }
 
     /**
@@ -146,7 +128,7 @@ class Error implements ErrorContract
 
     public function getPosition(): string
     {
-        $position = $this->getConfigByKey('position');
+        $position = $this->getConfig('position');
 
         if (empty($position)) {
             $position = $this->position;
@@ -164,7 +146,7 @@ class Error implements ErrorContract
     {
         $error = $this->element->getErrorProperty();
 
-        $id = $error['id'] ?? $this->getConfigByKey('id');
+        $id = $error['id'] ?? $this->getConfig('id');
 
         if (empty($id)) {
             $id = $this->element->getId();
@@ -197,10 +179,10 @@ class Error implements ErrorContract
      */
     public function getAttributes(): array
     {
-        $errorAttribute = $this->getConfigByKey('attributes') ?? [];
+        $errorAttribute = $this->getConfig('attributes') ?? [];
 
         $attributes = [
-            'class' => $this->getConfigByKey('class') ?? '',
+            'class' => $this->getConfig('class') ?? '',
             'id' => $this->getId(),
         ];
 
@@ -220,10 +202,10 @@ class Error implements ErrorContract
      */
     public function getWrapper(): array
     {
-        $wrapper = $this->getConfigByKey('wrapper') ?? [];
+        $wrapper = $this->getConfig('wrapper') ?? [];
 
         // Replace the data
-        $replaceData = $this->getConfigByKey('replace') ?? [];
+        $replaceData = $this->getConfig('replace') ?? [];
         $replaceData['{name}'] = $this->element->getName();
         $replaceData['{id}'] = $this->getId();
         $replaceData['{type}'] = $this->element->getType();
@@ -244,7 +226,7 @@ class Error implements ErrorContract
     protected function getReplaceData()
     {
         // Replace the data
-        $replaceData = $this->getConfigByKey('replace') ?? [];
+        $replaceData = $this->getConfig('replace') ?? [];
         $replaceData['{name}'] = $this->element->getName();
         $replaceData['{id}'] = $this->getId();
         $replaceData['{type}'] = $this->element->getType();
@@ -259,7 +241,7 @@ class Error implements ErrorContract
      * @param string $group The configuration group to search within.
      * @return mixed The configuration value associated with the key, or null if not found.
      */
-    protected function getConfigByKey($key, $group = null)
+    protected function getConfig($key, $group = null)
     {
         // Try to get the configuration directly field the 'getErrorProperty' array
         $keyConfig = Arr::get($this->element->getErrorProperty(), $key, null);
@@ -267,12 +249,12 @@ class Error implements ErrorContract
             return $keyConfig;
         }
         // If not found in 'field', heck type-specific configuration
-        $keyConfig = $this->getConfig('type.' . $this->element->getType() . '.error.' . $key);
+        $keyConfig = $this->element->getForm()->getConfig('type.' . $this->element->getType() . '.error.' . $key);
         if ($keyConfig !== null) {
             return $keyConfig;
         }
         // As a last resort, check general 'field.{$group?}.{key}' configuration
-        $keyConfig = $this->getConfig('field.error' . ($group ? '.' . $group : '') . '.' . $key);
+        $keyConfig = $this->element->getForm()->getConfig('field.error' . ($group ? '.' . $group : '') . '.' . $key);
 
         return $keyConfig;
     }

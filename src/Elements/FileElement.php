@@ -4,132 +4,148 @@ declare(strict_types=1);
 
 namespace Zk\FormBuilder\Elements;
 
+use Zk\FormBuilder\Helpers\WrapperBuilder;
+use Zk\FormBuilder\Contracts\Element as ElementContract;
+use Zk\FormBuilder\Contracts\Form;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
-use Zk\FormBuilder\Helpers\WrapperBuilder;
 use Illuminate\Support\Str;
 
 class FileElement extends Element
 {
     /**
-     * Component's name
-     * 
+     * Blade view component path.
+     *
      * @var string
      */
     public $component = 'formbuilder::template.file';
 
     /**
-     * Element type
+     * Element type identifier.
      *
      * @var string
      */
     public $elementType = 'file';
 
     /**
-     * Javascript Element
-     * 
+     * JavaScript handler/component name.
+     *
      * @var string
      */
     public $jsElement = 'ZkFileElement';
 
     /**
-     * Element upload options
-     * 
+     * Upload configuration options.
+     *
      * @var array
      */
     protected $options = [];
 
     /**
-     * Element custom upload function
-     * 
+     * Custom upload handler (callable or string).
+     *
      * @var mixed
      */
     protected $uploadFunc;
 
     /**
-     * Element custom load function
-     * 
+     * Custom fetch handler (callable or string).
+     *
      * @var mixed
      */
     protected $fetchFunc;
 
     /**
-     * Element custom files function
-     * 
+     * Custom display handler (callable or string).
+     *
      * @var mixed
      */
     protected $displayFunc;
 
     /**
-     * Element custom delete function
-     * 
+     * Custom delete handler (callable or string).
+     *
      * @var mixed
      */
     protected $deleteFunc;
 
     /**
-     * Return new Element instance
+     * Element constructor.
      *
-     * @param array $field
-     * @param Element | Form $parent
-     * @param array $properties
-     * @param string $configPath
-     * @param Factory $elementFactory
-     * @param WrapperBuilder $wrapperBuilder
+     * Initializes the base state of the element, including its field data,
+     * parent reference, configuration path, and injected dependencies.
+     * Heavy logic like dynamic field setup should be handled in `init()`,
+     * which must be called explicitly after successful instantiation.
+     *
+     * @param array $field Raw field definition, including name, type, label, etc.
+     * @param Form $form
+     * @param ElementContract | null $parent The parent element or null containing this element.
+     * @param WrapperBuilder $wrapperBuilder Helper for rendering element wrappers.
      */
     public function __construct(
-        $field,
-        protected $parent,
-        $properties,
-        $configPath,
-        protected Factory $elementFactory,
+        array $field,
+        protected Form $form,
+        protected ElementContract | null $parent,
         protected WrapperBuilder $wrapperBuilder
     ) {
-        parent::__construct($field, $parent, $properties, $configPath, $elementFactory, $wrapperBuilder);
+        parent::__construct($field, $form, $parent, $wrapperBuilder);
+    }
+
+    /**
+     * Initialize the element's dynamic properties.
+     *
+     * This method should be called after the element is successfully constructed,
+     * allowing for conditional rendering and dependency resolution before setup.
+     *
+     * @return void
+     */
+    public function init(): void
+    {
+        parent::init();
 
         $this->setOptions();
 
-        $this->uploadFunc = $this->field['upload'] ?? $this->getConfigByKey('upload');
-        $this->fetchFunc = $this->field['fetch'] ?? $this->getConfigByKey('fetch');
-        $this->displayFunc = $this->field['display'] ?? $this->getConfigByKey('display');
-        $this->deleteFunc = $this->field['delete'] ?? $this->getConfigByKey('delete');
+        $this->uploadFunc  = $field['upload']  ?? $this->getConfig('upload');
+        $this->fetchFunc   = $field['fetch']   ?? $this->getConfig('fetch');
+        $this->displayFunc = $field['display'] ?? $this->getConfig('display');
+        $this->deleteFunc  = $field['delete']  ?? $this->getConfig('delete');
 
-        // Form has files so set enctype to multipart/form-data
-        $this->getForm()->files = true;
+        // Ensure the parent form is set to support file uploads
+        $this->getForm()->setHasFiles(true);
     }
 
     /**
-     * Set upload options
-     * 
+     * Initialize file upload options with fallbacks.
+     *
      * @return void
      */
-    protected function setOptions()
+    protected function setOptions(): void
     {
-        $upload = $this->field['options'] ?? $this->getConfigByKey('options');
+        $options = $this->field['options'] ?? $this->getConfig('options') ?? [];
 
-        $this->options['delete'] = $upload['delete'] ?? false;
-        $this->options['disk'] = $upload['disk'] ?? 'public';
-        $this->options['path'] = $upload['path'] ?? 'documents';
-        $this->options['prefix'] = $upload['prefix'] ?? '';
-        $this->options['suffix'] = $upload['suffix'] ?? '';
-        $this->options['filename'] = $upload['filename'] ?? 'original';
-        $this->options['extension'] = $upload['extension'] ?? 'original';
+        $this->options = [
+            'delete'    => $options['delete']    ?? false,
+            'disk'      => $options['disk']      ?? 'public',
+            'path'      => $options['path']      ?? 'documents',
+            'prefix'    => $options['prefix']    ?? '',
+            'suffix'    => $options['suffix']    ?? '',
+            'filename'  => $options['filename']  ?? 'original',
+            'extension' => $options['extension'] ?? 'original',
+        ];
     }
 
     /**
-     * Get upload options
-     * 
-     * @param string $key
-     * @return array | mixed
+     * Retrieve upload options.
+     *
+     * @param string|null $key Specific option key, or all options if null.
+     * @return mixed
      */
     public function getOptions($key = null)
     {
-        if ($key === null) {
-            return $this->options;
-        }
-
-        return $this->options[$key] ?? '';
+        return $key === null
+            ? $this->options
+            : ($this->options[$key] ?? '');
     }
 
     /**

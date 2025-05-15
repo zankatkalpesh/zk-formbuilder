@@ -33,14 +33,6 @@ interface Label
     public function getAfter();
 
     /**
-     * Get config
-     * 
-     * @param string $key optional 
-     * @return mixed
-     */
-    public function getConfig($key = null);
-
-    /**
      * Get label text
      * 
      * @return string

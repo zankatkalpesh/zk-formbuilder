@@ -4,28 +4,30 @@ declare(strict_types=1);
 
 namespace Zk\FormBuilder\Elements;
 
-use Illuminate\Support\Arr;
 use Zk\FormBuilder\Helpers\WrapperBuilder;
+use Zk\FormBuilder\Contracts\Element as ElementContract;
+use Zk\FormBuilder\Contracts\Form;
+use Illuminate\Support\Arr;
 
 class TabElement extends Element
 {
     /**
-     * Component's name
-     * 
+     * Blade view component path.
+     *
      * @var string
      */
     public $component = 'formbuilder::template.tab';
 
     /**
-     * Element type
+     * Element type identifier.
      *
      * @var string
      */
     public $elementType = 'tab';
 
     /**
-     * Javascript Element
-     * 
+     * JavaScript handler/component name.
+     *
      * @var string
      */
     public $jsElement = 'ZkTabElement';
@@ -38,25 +40,40 @@ class TabElement extends Element
     protected $tabs = [];
 
     /**
-     * Return new Element instance
+     * Element constructor.
      *
-     * @param array $field
-     * @param Element | Form $parent
-     * @param array $properties
-     * @param string $configPath
-     * @param Factory $elementFactory
-     * @param WrapperBuilder $wrapperBuilder
+     * Initializes the base state of the element, including its field data,
+     * parent reference, configuration path, and injected dependencies.
+     * Heavy logic like dynamic field setup should be handled in `init()`,
+     * which must be called explicitly after successful instantiation.
+     *
+     * @param array $field Raw field definition, including name, type, label, etc.
+     * @param Form $form
+     * @param ElementContract | null $parent The parent element or null containing this element.
+     * @param WrapperBuilder $wrapperBuilder Helper for rendering element wrappers.
      */
     public function __construct(
-        $field,
-        protected $parent,
-        $properties,
-        $configPath,
-        protected Factory $elementFactory,
+        array $field,
+        protected Form $form,
+        protected ElementContract | null $parent,
         protected WrapperBuilder $wrapperBuilder
     ) {
-        parent::__construct($field, $parent, $properties, $configPath, $elementFactory, $wrapperBuilder);
+        parent::__construct($field, $form, $parent, $wrapperBuilder);
+    }
 
+    /**
+     * Initialize the element's dynamic properties.
+     *
+     * This method should be called after the element is successfully constructed,
+     * allowing for conditional rendering and dependency resolution before setup.
+     *
+     * @return void
+     */
+    public function init(): void
+    {
+        parent::init();
+
+        // Set tabs
         $this->setTabs();
     }
 
@@ -120,13 +137,11 @@ class TabElement extends Element
                 $name = $field['name'];
             }
             $name = $tabName . '.' . $name;
-            $element = $this->elementFactory->make(
-                $field,
-                $name,
-                $this,
-                $this->getProperties(),
-                $this->configPath
-            );
+
+            // Make element
+            $element = $this->form->makeElement($name, $field, $this);
+            if ($element === null) continue;
+
             $tabFields[] = $element;
         }
         $tab['fields'] = $tabFields;
@@ -194,7 +209,7 @@ class TabElement extends Element
     protected function getItemWrapper($tab, $key = 'itemWrapper'): array
     {
         // Replace the data
-        $replaceData = $this->getConfigByKey('replace') ?? [];
+        $replaceData = $this->getConfig('replace') ?? [];
         $replaceData['{name}'] = $this->getName();
         $replaceData['{id}'] = $this->getId();
         $replaceData['{type}'] = $this->getType();
@@ -208,7 +223,7 @@ class TabElement extends Element
         $wrapper = $tab[$key] ?? [];
 
         if (empty($wrapper)) {
-            $wrapper = $this->getConfigByKey($key) ?? [];
+            $wrapper = $this->getConfig($key) ?? [];
         }
         $actvieClass = $wrapper['activeClass'] ?? 'active';
 
@@ -365,15 +380,13 @@ class TabElement extends Element
      */
     public function isInvalid(): bool
     {
-        if ($this->validator === null) {
+        if (!$this->shouldValidate()) {
             return false;
         }
 
         foreach ($this->tabs as $tab) {
-            foreach ($tab['fields'] as $field) {
-                if ($field->isInvalid()) {
-                    return true;
-                }
+            if ($this->isInvalidTab($tab)) {
+                return true;
             }
         }
 
@@ -387,6 +400,10 @@ class TabElement extends Element
      */
     public function isInvalidTab($tab)
     {
+        if (!$this->shouldValidate()) {
+            return false;
+        }
+
         foreach ($tab['fields'] as $field) {
             if ($field->isInvalid()) {
                 return true;

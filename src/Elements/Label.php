@@ -14,18 +14,18 @@ class Label implements LabelContract
     use GeneralMethods;
 
     /**
-     * Component's name
-     * 
+     * Blade view component path.
+     *
      * @var string
      */
     public $component = 'formbuilder::label';
 
     /**
-     * Javascript Element
-     * 
+     * JavaScript handler/component name.
+     *
      * @var string
      */
-    public $jsElement = 'ZkLabelElement';
+    public $jsElement = 'ZkLabel';
 
     /** 
      * Label html tag name
@@ -45,12 +45,10 @@ class Label implements LabelContract
      * Return new Label instance
      *
      * @param Element $element
-     * @param string $configPath
      * @param WrapperBuilder $wrapperBuilder
      */
     public function __construct(
         protected Element $element,
-        public $configPath,
         protected WrapperBuilder $wrapperBuilder
     ) {}
 
@@ -61,7 +59,7 @@ class Label implements LabelContract
      */
     public function getComponent(): string
     {
-        return $this->getConfigByKey('component') ?? $this->component;
+        return $this->getConfig('component') ?? $this->component;
     }
 
     /**
@@ -71,7 +69,7 @@ class Label implements LabelContract
      */
     public function getJsElement(): string
     {
-        return $this->getConfigByKey('jsElement') ?? $this->jsElement;
+        return $this->getConfig('jsElement') ?? $this->jsElement;
     }
 
     /**
@@ -81,7 +79,7 @@ class Label implements LabelContract
      */
     public function getBefore()
     {
-        $before = $this->getConfigByKey('before') ?? '';
+        $before = $this->getConfig('before') ?? '';
 
         if (is_callable($before)) {
             $before = call_user_func($before, $this);
@@ -97,7 +95,7 @@ class Label implements LabelContract
      */
     public function getAfter()
     {
-        $after = $this->getConfigByKey('after') ?? '';
+        $after = $this->getConfig('after') ?? '';
 
         if (is_callable($after)) {
             $after = call_user_func($after, $this);
@@ -113,28 +111,13 @@ class Label implements LabelContract
      */
     public function getTagName(): string
     {
-        $tag = $this->getConfigByKey('tag');
+        $tag = $this->getConfig('tag');
 
         if (empty($tag)) {
             $tag = $this->tagName;
         }
 
         return $tag;
-    }
-
-    /**
-     * Get config
-     * 
-     * @return mixed
-     */
-    public function getConfig($key = null)
-    {
-        $config = config($this->configPath);
-        if ($key) {
-            return Arr::get($config, $key);
-        }
-
-        return $config;
     }
 
     /**
@@ -145,7 +128,7 @@ class Label implements LabelContract
 
     public function getPosition(): string
     {
-        $position = $this->getConfigByKey('position');
+        $position = $this->getConfig('position');
 
         if (empty($position)) {
             $position = $this->position;
@@ -163,7 +146,7 @@ class Label implements LabelContract
     {
         $label = $this->element->getLabelProperty();
 
-        $id = $label['id'] ?? $this->getConfigByKey('id');
+        $id = $label['id'] ?? $this->getConfig('id');
 
         if (empty($id)) {
             $id = $this->element->getId();
@@ -209,14 +192,14 @@ class Label implements LabelContract
      */
     public function getAttributes(): array
     {
-        $labelAttribute = $this->getConfigByKey('attributes') ?? [];
+        $labelAttribute = $this->getConfig('attributes') ?? [];
 
         $attributes = [
-            'class' => $this->getConfigByKey('class') ?? '',
+            'class' => $this->getConfig('class') ?? '',
         ];
 
         if ($this->element->isRequired('frontend')) {
-            $attributes['class'] .= ' ' . ($this->getConfigByKey('requiredClass') ?? 'required');
+            $attributes['class'] .= ' ' . ($this->getConfig('requiredClass') ?? 'required');
         }
 
         if (!isset($labelAttribute['for']) || $labelAttribute['for'] === true) {
@@ -233,7 +216,7 @@ class Label implements LabelContract
         // Add error class
         $replaceData['{errorClass}'] = '';
         if ($this->element->isInvalid()) {
-            $errorClass = $this->getConfigByKey('errorClass') ?? '';
+            $errorClass = $this->getConfig('errorClass') ?? '';
             $replaceData['{errorClass}'] = str_replace(array_keys($replaceData), array_values($replaceData), $errorClass);
         }
 
@@ -249,14 +232,14 @@ class Label implements LabelContract
      */
     public function getWrapper(): array
     {
-        $wrapper = $this->getConfigByKey('wrapper') ?? [];
+        $wrapper = $this->getConfig('wrapper') ?? [];
 
         // Replace the data
         $replaceData = $this->getReplaceData();
         // Add error class
         $replaceData['{errorClass}'] = '';
         if ($this->element->isInvalid()) {
-            $errorClass = $this->getConfigByKey('wrapper.errorClass') ?? '';
+            $errorClass = $this->getConfig('wrapper.errorClass') ?? '';
             $replaceData['{errorClass}'] = str_replace(array_keys($replaceData), array_values($replaceData), $errorClass);
         }
 
@@ -276,7 +259,7 @@ class Label implements LabelContract
     protected function getReplaceData()
     {
         // Replace the data
-        $replaceData = $this->getConfigByKey('replace') ?? [];
+        $replaceData = $this->getConfig('replace') ?? [];
         $replaceData['{name}'] = $this->element->getName();
         $replaceData['{id}'] = $this->getId();
         $replaceData['{type}'] = $this->element->getType();
@@ -291,7 +274,7 @@ class Label implements LabelContract
      * @param string $group The configuration group to search within.
      * @return mixed The configuration value associated with the key, or null if not found.
      */
-    protected function getConfigByKey($key, $group = null)
+    protected function getConfig($key, $group = null)
     {
         // Try to get the configuration directly field the 'getLabelProperty' array
         $keyConfig = Arr::get($this->element->getLabelProperty(), $key, null);
@@ -299,12 +282,12 @@ class Label implements LabelContract
             return $keyConfig;
         }
         // If not found in 'field', heck type-specific configuration
-        $keyConfig = $this->getConfig('type.' . $this->element->getType() . '.label.' . $key);
+        $keyConfig = $this->element->getForm()->getConfig('type.' . $this->element->getType() . '.label.' . $key);
         if ($keyConfig !== null) {
             return $keyConfig;
         }
         // As a last resort, check general 'field.{$group?}.{key}' configuration
-        $keyConfig = $this->getConfig('field.label' . ($group ? '.' . $group : '') . '.' . $key);
+        $keyConfig = $this->element->getForm()->getConfig('field.label' . ($group ? '.' . $group : '') . '.' . $key);
 
         return $keyConfig;
     }

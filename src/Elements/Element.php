@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Zk\FormBuilder\Elements;
 
 use Illuminate\Support\Arr;
-use Zk\FormBuilder\Elements\Factory;
 use Zk\FormBuilder\Helpers\WrapperBuilder;
 use Zk\FormBuilder\Contracts\Element as ElementContract;
 use Zk\FormBuilder\Contracts\Form;
 use Zk\FormBuilder\Traits\GeneralMethods;
-use Zk\FormBuilder\Contracts\Validation\Validator;
 use Zk\FormBuilder\Contracts\Label;
 use Zk\FormBuilder\Contracts\Error;
 
@@ -19,175 +17,182 @@ class Element implements ElementContract
     use GeneralMethods;
 
     /**
-     * Component's name
-     * 
+     * Blade view component path.
+     *
      * @var string
      */
     public $component = 'formbuilder::template.input';
 
     /**
-     * Javascript Element
-     * 
+     * JavaScript handler/component name.
+     *
      * @var string
      */
     public $jsElement = 'ZkElement';
 
     /**
-     * Element type
+     * Element type identifier.
      *
      * @var string
      */
     public $elementType = 'general';
 
     /**
-     * Element type
+     * Input type (e.g., text, email, number, date).
      *
      * @var string
      */
     public $type = 'text';
 
     /**
-     * Element key on data
+     * Field key or attribute name.
      *
-     * @var string
+     * @var string|null
      */
     public $name;
 
     /**
-     * Element key on entity
+     * Field-level HTML attributes (e.g., placeholder, maxlength).
      *
      * @var array
      */
     public $attributes;
 
     /**
-     * Element view only
-     * 
+     * Whether this element is read-only/view-only.
+     *
      * @var bool
      */
     public $viewOnly = false;
 
     /**
-     * Element modify value
-     * 
+     * Callback or closure to modify display value.
+     *
      * @var mixed
      */
     public $modifyValue;
 
-    /** 
-     * Element modify data
-     * 
+    /**
+     * Callback or closure to modify data before populate.
+     *
      * @var mixed
      */
     public $modifyData;
 
     /**
-     * Whether should persist in db
+     * Whether this element should be persisted to the database.
      *
      * @var bool
      */
     public $persist = true;
 
     /**
-     * Element data
+     * Value/data associated with this element.
      *
-     * @var any
+     * @var mixed
      */
     public $data;
 
     /**
-     * Element field
+     * Original field definition array.
      *
      * @var array
      */
     public $field;
 
     /**
-     * Element properties
-     *
-     * @var array
-     */
-    public $properties = [];
-
-    /**
-     * Element config path
-     *
-     * @var string
-     */
-    public $configPath;
-
-    /**
-     * Validation rules
+     * Validation rules for this element.
      *
      * @var array
      */
     public $rules;
 
     /**
-     * Custom validation messages
+     * Custom validation messages for this element.
      *
      * @var array
      */
     public $messages = [];
 
     /**
-     * Element default replace pattern data
-     * 
+     * Pattern-based replacement data.
+     *
      * @var array
      */
     protected $replaceData = [];
 
-    /** 
-     * Element validator
-     * 
-     * @var Validator
-     */
-    protected $validator;
-
     /**
-     * Return new Element instance
+     * Element constructor.
      *
-     * @param array $field
-     * @param Element | Form $parent
-     * @param array $properties
-     * @param string $configPath
-     * @param Factory $elementFactory
-     * @param WrapperBuilder $wrapperBuilder
+     * Initializes the base state of the element, including its field data,
+     * parent reference, configuration path, and injected dependencies.
+     * Heavy logic like dynamic field setup should be handled in `init()`,
+     * which must be called explicitly after successful instantiation.
+     *
+     * @param array $field Raw field definition, including name, type, label, etc.
+     * @param Form $form
+     * @param ElementContract | null $parent The parent element or null containing this element.
+     * @param WrapperBuilder $wrapperBuilder Helper for rendering element wrappers.
      */
     public function __construct(
-        $field,
-        protected $parent,
-        $properties,
-        $configPath,
-        protected Factory $elementFactory,
+        array $field,
+        protected Form $form,
+        protected ElementContract | null $parent,
         protected WrapperBuilder $wrapperBuilder
     ) {
+        // Set field definition and form validator
         $this->field = $field;
-        $this->validator = $parent->getValidator();
-        $this->properties = array_merge($this->properties, $properties);
-        $this->configPath = $configPath;
-
-        $this->init();
     }
 
     /**
-     * Initalize class properties
-     * 
+     * Initialize the element's dynamic properties.
+     *
+     * This method should be called after the element is successfully constructed,
+     * allowing for conditional rendering and dependency resolution before setup.
+     *
      * @return void
      */
-    public function init()
+    public function init(): void
     {
-        $this->name = $this->field['name'] ?? $this->name;
-        $this->type = $this->field['type'] ?? $this->type;
+        $field = $this->field;
+
+        $this->name = $field['name'] ?? $this->name;
+        $this->type = $field['type'] ?? $this->type;
+
         if ($this->type === 'hidden') {
             $this->field['label'] = false;
         }
-        $this->messages = $this->field['messages'] ?? $this->messages;
-        $this->persist = $this->field['persist'] ?? $this->persist;
-        $this->attributes = $this->getConfigByKey('attributes') ?? [];
-        $this->viewOnly = $this->getConfigByKey('viewOnly') != null ? $this->getConfigByKey('viewOnly') : $this->parent->hasViewOnly();
-        $this->modifyValue = $this->getConfigByKey('modifyValue') ?? null;
-        $this->modifyData = $this->getConfigByKey('modifyData') ?? null;
+
+        $this->messages = $field['messages'] ?? $this->messages;
+        $this->persist  = $field['persist'] ?? $this->persist;
+
+        // Fetch all config keys at once
+        $attributes   = $this->getConfig('attributes');
+        $modifyValue  = $this->getConfig('modifyValue');
+        $modifyData   = $this->getConfig('modifyData');
+        $viewOnly     = $this->getConfig('viewOnly');
+
+        $this->attributes  = $attributes ?? [];
+        $this->modifyValue = $modifyValue;
+        $this->modifyData  = $modifyData;
+
+        $this->viewOnly = $viewOnly !== null
+            ? $viewOnly
+            : ($this->parent?->hasViewOnly() ?? $this->form->hasViewOnly());
+    }
+
+    /**
+     * Determine if the element is allowed to render.
+     * 
+     * @return bool
+     */
+    public function can(): bool
+    {
+        $can = $this->field['can'] ?? true;
+
+        return is_callable($can)
+            ? (bool) call_user_func($can, $this)
+            : (bool) $can;
     }
 
     /**
@@ -197,7 +202,7 @@ class Element implements ElementContract
      */
     public function getComponent(): string
     {
-        return $this->getConfigByKey('component') ?? $this->component;
+        return $this->getConfig('component') ?? $this->component;
     }
 
     /**
@@ -217,7 +222,7 @@ class Element implements ElementContract
      */
     public function getJsElement(): string
     {
-        return $this->getConfigByKey('jsElement') ?? $this->jsElement;
+        return $this->getConfig('jsElement') ?? $this->jsElement;
     }
 
     /**
@@ -228,7 +233,7 @@ class Element implements ElementContract
      */
     public function getProperty(string $key)
     {
-        return Arr::get($this->properties, $key);
+        return $this->form->getProperty($key);
     }
 
     /**
@@ -238,23 +243,7 @@ class Element implements ElementContract
      */
     public function getProperties(): array
     {
-        return $this->properties;
-    }
-
-    /**
-     * Get config
-     * 
-     * @param string $key optional 
-     * @return mixed
-     */
-    public function getConfig($key = null)
-    {
-        $config = config($this->configPath);
-        if ($key) {
-            return Arr::get($config, $key, null);
-        }
-
-        return $config;
+        return $this->form->getProperties();
     }
 
     /**
@@ -264,7 +253,7 @@ class Element implements ElementContract
      */
     public function getBefore()
     {
-        $before = $this->getConfigByKey('before') ?? '';
+        $before = $this->getConfig('before') ?? '';
 
         if (is_callable($before)) {
             $before = call_user_func($before, $this);
@@ -280,7 +269,7 @@ class Element implements ElementContract
      */
     public function getAfter()
     {
-        $after = $this->getConfigByKey('after') ?? '';
+        $after = $this->getConfig('after') ?? '';
 
         if (is_callable($after)) {
             $after = call_user_func($after, $this);
@@ -296,7 +285,7 @@ class Element implements ElementContract
      */
     public function hasView(): bool
     {
-        return ($this->getConfigByKey('view')) ? true : false;
+        return ($this->getConfig('view')) ? true : false;
     }
 
     /**
@@ -306,7 +295,7 @@ class Element implements ElementContract
      */
     public function getView()
     {
-        $after = $this->getConfigByKey('view') ?? '';
+        $after = $this->getConfig('view') ?? '';
 
         if (is_callable($after)) {
             $after = call_user_func($after, $this);
@@ -322,7 +311,7 @@ class Element implements ElementContract
      */
     public function getAttributes(): array
     {
-        $class = $this->getConfigByKey('class', 'input') ?? '';
+        $class = $this->getConfig('class', 'input') ?? '';
         $attributes = [
             'class' => $class ?? '',
             'name' => $this->getName(),
@@ -341,7 +330,7 @@ class Element implements ElementContract
         // Add error class to element
         $replaceData['{errorClass}'] = '';
         if ($this->isInvalid()) {
-            $errorClass = $this->getConfigByKey('errorClass', 'input') ?? '';
+            $errorClass = $this->getConfig('errorClass', 'input') ?? '';
             $replaceData['{errorClass}'] = str_replace(array_keys($replaceData), array_values($replaceData), $errorClass);
         }
         $attributes = $this->replacePattern($attributes, $replaceData);
@@ -408,7 +397,7 @@ class Element implements ElementContract
      */
     public function getColumnName(): string
     {
-        $column = $this->field['column'] ?? [];
+        $column = $this->field['column'] ?? '';
 
         if (is_array($column)) {
             $column =  $column['name'] ?? '';
@@ -455,7 +444,7 @@ class Element implements ElementContract
     {
         $name = $this->getNameKey();
 
-        $id = $this->field['id'] ?? $this->getConfigByKey('id', 'input');
+        $id = $this->field['id'] ?? $this->getConfig('id', 'input');
 
         if (empty($id)) {
             $id = $name;
@@ -496,7 +485,7 @@ class Element implements ElementContract
         $showLabel = (isset($this->field['label']) && $this->field['label'] === false) ? false : true;
 
         return ($showLabel)
-            ? app()->makeWith(__NAMESPACE__ . '\\' . 'Label', ['element' => $this, 'configPath' => $this->configPath])
+            ? app()->makeWith(__NAMESPACE__ . '\\' . 'Label', ['element' => $this])
             : false;
     }
 
@@ -561,14 +550,14 @@ class Element implements ElementContract
      */
     public function getWrapper(string $key = 'wrapper'): array
     {
-        $wrapper = $this->getConfigByKey($key) ?? [];
+        $wrapper = $this->getConfig($key) ?? [];
 
         // Replace the data
         $replaceData = $this->getReplaceData();
         // Add Error class to element
         $replaceData['{errorClass}'] = '';
         if ($this->isInvalid()) {
-            $errorClass = $this->getConfigByKey($key . '.errorClass') ?? '';
+            $errorClass = $this->getConfig($key . '.errorClass') ?? '';
             $replaceData['{errorClass}'] = str_replace(array_keys($replaceData), array_values($replaceData), $errorClass);
         }
 
@@ -686,11 +675,11 @@ class Element implements ElementContract
     /** 
      * Get parent element
      * 
-     * @return Element|null
+     * @return ElementContract | null
      */
     public function getParent()
     {
-        return $this->parent instanceof Element ? $this->parent : null;
+        return $this->parent;
     }
 
     /** 
@@ -700,17 +689,7 @@ class Element implements ElementContract
      */
     public function getForm()
     {
-        return $this->parent instanceof Form ? $this->parent : $this->parent->getForm();
-    }
-
-    /**
-     * Get Validator
-     *
-     * @return Validator
-     */
-    public function getValidator()
-    {
-        return $this->validator;
+        return $this->form;
     }
 
     /**
@@ -720,7 +699,7 @@ class Element implements ElementContract
      */
     public function shouldValidate(): bool
     {
-        return $this->validator && $this->hasRules() && !$this->hasViewOnly();
+        return $this->form->getValidator() && $this->hasRules() && !$this->hasViewOnly();
     }
 
     /**
@@ -797,19 +776,19 @@ class Element implements ElementContract
         }
 
         // Set element data
-        $this->validator->setData($this->toValidationData());
+        $this->form->getValidator()->setData($this->toValidationData());
 
         // Set element rules
-        $this->validator->setRules($this->toValidationRules());
+        $this->form->getValidator()->setRules($this->toValidationRules());
 
         // Set element attributes
-        $this->validator->addAttributes($this->toValidationAttributes());
+        $this->form->getValidator()->addAttributes($this->toValidationAttributes());
 
         // Set element to message
         if (!empty($messages)) {
             $this->messages = array_merge($this->messages, $messages);
         }
-        $this->validator->addMessages($this, $this->getRules(), $this->getNameKey());
+        $this->form->getValidator()->addMessages($this, $this->getRules(), $this->getNameKey());
     }
 
     /**
@@ -823,7 +802,7 @@ class Element implements ElementContract
             return false;
         }
 
-        return $this->validator->isInvalid($this->getNameKey());
+        return $this->form->getValidator()->isInvalid($this->getNameKey());
     }
 
     /**
@@ -837,7 +816,7 @@ class Element implements ElementContract
             return [];
         }
 
-        return $this->validator->getError($this->getNameKey());
+        return $this->form->getValidator()->getError($this->getNameKey());
     }
 
     /**
@@ -858,7 +837,7 @@ class Element implements ElementContract
     public function getError(): Error | bool
     {
         return ($this->isInvalid())
-            ? app()->makeWith(__NAMESPACE__ . '\\' . 'Error', ['element' => $this, 'configPath' => $this->configPath])
+            ? app()->makeWith(__NAMESPACE__ . '\\' . 'Error', ['element' => $this])
             : false;
     }
 
@@ -961,7 +940,7 @@ class Element implements ElementContract
     protected function getReplaceData()
     {
         // Replace the data
-        $replaceData = $this->getConfigByKey('replace') ?? [];
+        $replaceData = $this->getConfig('replace') ?? [];
         $replaceData['{name}'] = $this->getName();
         $replaceData['{id}'] = $this->getId();
         $replaceData['{type}'] = $this->getType();
@@ -980,7 +959,7 @@ class Element implements ElementContract
      * @param string $group The configuration group to search within.
      * @return mixed The configuration value associated with the key, or null if not found.
      */
-    protected function getConfigByKey($key, $group = null)
+    protected function getConfig($key, $group = null)
     {
         // Try to get the configuration directly from the 'field' array
         $keyConfig = Arr::get($this->field, $key, null);
@@ -989,12 +968,12 @@ class Element implements ElementContract
         }
 
         // If not found in 'field', heck type-specific configuration
-        $keyConfig = $this->getConfig('type.' . $this->getType() . '.' . $key);
+        $keyConfig = $this->form->getConfig('type.' . $this->getType() . '.' . $key);
         if ($keyConfig !== null) {
             return $keyConfig;
         }
         // As a last resort, check general 'field.{$group?}.{key}' configuration
-        $keyConfig = $this->getConfig('field' . ($group ? '.' . $group : '') . '.' . $key);
+        $keyConfig = $this->form->getConfig('field' . ($group ? '.' . $group : '') . '.' . $key);
 
         return $keyConfig;
     }
@@ -1083,14 +1062,11 @@ class Element implements ElementContract
             if (isset($item['label'])) unset($item['label']);
             // Merge field with item
             $field = array_merge($field, $item);
-            // Make field
-            $element = $this->elementFactory->make(
-                $field,
-                $field['name'],
-                $this,
-                $this->getProperties(),
-                $this->configPath
-            );
+            // Make element
+            $element = $this->form->makeElement($field['name'], $field, $this);
+
+            if ($element === null) continue;
+
             $newItems[] = $element;
         }
 

@@ -6,26 +6,28 @@ namespace Zk\FormBuilder\Elements;
 
 use Illuminate\Support\Arr;
 use Zk\FormBuilder\Helpers\WrapperBuilder;
+use Zk\FormBuilder\Contracts\Element as ElementContract;
+use Zk\FormBuilder\Contracts\Form;
 
 class CheckboxgroupElement extends Element
 {
     /**
-     * Component's name
-     * 
+     * Blade view component path.
+     *
      * @var string
      */
     public $component = 'formbuilder::template.itemgroup';
 
     /**
-     * Element type
+     * Element type identifier.
      *
      * @var string
      */
     public $elementType = 'checkboxgroup';
 
     /**
-     * Javascript Element
-     * 
+     * JavaScript handler/component name.
+     *
      * @var string
      */
     public $jsElement = 'ZkItemgroupElement';
@@ -38,25 +40,40 @@ class CheckboxgroupElement extends Element
     protected $items = [];
 
     /**
-     * Return new Element instance
+     * Element constructor.
      *
-     * @param array $field
-     * @param Element | Form $parent
-     * @param array $properties
-     * @param string $configPath
-     * @param Factory $elementFactory
-     * @param WrapperBuilder $wrapperBuilder
+     * Initializes the base state of the element, including its field data,
+     * parent reference, configuration path, and injected dependencies.
+     * Heavy logic like dynamic field setup should be handled in `init()`,
+     * which must be called explicitly after successful instantiation.
+     *
+     * @param array $field Raw field definition, including name, type, label, etc.
+     * @param Form $form
+     * @param ElementContract | null $parent The parent element or null containing this element.
+     * @param WrapperBuilder $wrapperBuilder Helper for rendering element wrappers.
      */
     public function __construct(
-        $field,
-        protected $parent,
-        $properties,
-        $configPath,
-        protected Factory $elementFactory,
+        array $field,
+        protected Form $form,
+        protected ElementContract | null $parent,
         protected WrapperBuilder $wrapperBuilder
     ) {
-        parent::__construct($field, $parent, $properties, $configPath, $elementFactory, $wrapperBuilder);
+        parent::__construct($field, $form, $parent, $wrapperBuilder);
+    }
 
+    /**
+     * Initialize the element's dynamic properties.
+     *
+     * This method should be called after the element is successfully constructed,
+     * allowing for conditional rendering and dependency resolution before setup.
+     *
+     * @return void
+     */
+    public function init(): void
+    {
+        parent::init();
+
+        // Set items
         $this->setItems();
     }
 
@@ -86,16 +103,6 @@ class CheckboxgroupElement extends Element
     public function getItems(): array
     {
         return $this->items;
-    }
-
-    /**
-     * Set element data
-     * 
-     * @return void
-     */
-    public function setData($data): void
-    {
-        $this->data = $data;
     }
 
     /**

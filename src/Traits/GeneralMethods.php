@@ -9,25 +9,6 @@ namespace Zk\FormBuilder\Traits;
  */
 trait GeneralMethods
 {
-
-	/**
-	 * Print element's attributes
-	 * 
-	 * @param array $attributes
-	 * @param array $exclude // The attribute to exclude from the output.
-	 * @return string
-	 */
-	public function printAttributes(array $attributes = [], $exclude = []): string
-	{
-		$attributes = (!empty($attributes)) ? $attributes : $this->getAttributes();
-		$htmlAttributes = [];
-		foreach ($attributes as $key => $value) {
-			if (in_array($key, $exclude)) continue;
-			$htmlAttributes[] = (is_numeric($key)) ? trim((string) $value) : $key . '="' . trim((string) $value) . '"';
-		}
-		return implode(' ', $htmlAttributes);
-	}
-
 	/**
 	 * Replace pattern
 	 * 
@@ -57,14 +38,20 @@ trait GeneralMethods
 
 	public function toBracketNotation(string $str, string $separator = '.'): string
 	{
+		$str = trim($str);
+		if ($str === '' || !str_contains($str, $separator)) {
+			return $str;
+		}
+
 		$suffix = '';
-		if (!str_contains($str, $separator)) return $str; // No $separator, return the original string
 		if (str_ends_with($str, '[]')) {
 			$str = substr($str, 0, -2);
 			$suffix = '[]';
 		}
+
 		$parts = explode($separator, $str);
 		$firstPart = array_shift($parts);
+
 		return $firstPart . '[' . implode('][', $parts) . ']' . $suffix;
 	}
 
@@ -77,6 +64,9 @@ trait GeneralMethods
 
 	public function toHumanReadable(string $str): string
 	{
+		$str = trim($str);
+		if ($str === '') return $str;
+
 		$str = ucwords($str, '-');
 		$str = ucwords($str, '_');
 

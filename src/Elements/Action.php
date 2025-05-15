@@ -15,15 +15,15 @@ class Action implements ActionContract
     use GeneralMethods;
 
     /**
-     * Component's name
-     * 
+     * Blade view component path.
+     *
      * @var string
      */
     public $component = 'formbuilder::template.action';
 
     /**
-     * Javascript Element
-     * 
+     * JavaScript handler/component name.
+     *
      * @var string
      */
     public $jsElement = 'ZkAction';
@@ -53,7 +53,6 @@ class Action implements ActionContract
     public function __construct(
         $action,
         protected $form,
-        public $configPath,
         protected WrapperBuilder $wrapperBuilder
     ) {
         $this->action = $action;
@@ -66,7 +65,7 @@ class Action implements ActionContract
      */
     public function getComponent(): string
     {
-        return $this->getConfigByKey('component') ?? $this->component;
+        return $this->getConfig('component') ?? $this->component;
     }
 
     /**
@@ -76,7 +75,7 @@ class Action implements ActionContract
      */
     public function getJsElement(): string
     {
-        return $this->getConfigByKey('jsElement') ?? $this->jsElement;
+        return $this->getConfig('jsElement') ?? $this->jsElement;
     }
 
     /**
@@ -86,7 +85,7 @@ class Action implements ActionContract
      */
     public function getBefore()
     {
-        $before = $this->getConfigByKey('before') ?? '';
+        $before = $this->getConfig('before') ?? '';
 
         if (is_callable($before)) {
             $before = call_user_func($before, $this);
@@ -102,7 +101,7 @@ class Action implements ActionContract
      */
     public function getAfter()
     {
-        $after = $this->getConfigByKey('after') ?? '';
+        $after = $this->getConfig('after') ?? '';
 
         if (is_callable($after)) {
             $after = call_user_func($after, $this);
@@ -118,28 +117,13 @@ class Action implements ActionContract
      */
     public function getTagName(): string
     {
-        $tag = $this->getConfigByKey('tag');
+        $tag = $this->getConfig('tag');
 
         if (empty($tag)) {
             $tag = $this->tagName;
         }
 
         return $tag;
-    }
-
-    /**
-     * Get config
-     * 
-     * @return mixed
-     */
-    public function getConfig($key = null)
-    {
-        $config = config($this->configPath);
-        if ($key) {
-            return Arr::get($config, $key);
-        }
-
-        return $config;
     }
 
     /**
@@ -153,7 +137,7 @@ class Action implements ActionContract
         $name = $this->toBracketNotation($name);
 
         // Replace the data
-        $replaceData = $this->getConfigByKey('replace') ?? [];
+        $replaceData = $this->getConfig('replace') ?? [];
         $replaceData['{formName}'] = $this->form->getName();
         $replaceData['{formId}'] = $this->form->getId();
         $replaceData['{formPrefix}'] = $this->form->getPrefix();
@@ -175,7 +159,7 @@ class Action implements ActionContract
         $id = $this->toBracketNotation($id);
 
         // Replace the data
-        $replaceData = $this->getConfigByKey('replace') ?? [];
+        $replaceData = $this->getConfig('replace') ?? [];
         $replaceData['{formName}'] = $this->form->getName();
         $replaceData['{formId}'] = $this->form->getId();
         $replaceData['{formPrefix}'] = $this->form->getPrefix();
@@ -206,10 +190,10 @@ class Action implements ActionContract
      */
     public function getAttributes(): array
     {
-        $actionAttribute = $this->getConfigByKey('attributes') ?? [];
+        $actionAttribute = $this->getConfig('attributes') ?? [];
 
         $attributes = [
-            'class' => $this->getConfigByKey('class') ?? '',
+            'class' => $this->getConfig('class') ?? '',
             'id' => $this->getId(),
             'name' => $this->getName(),
         ];
@@ -218,7 +202,7 @@ class Action implements ActionContract
         // Add error class
         $replaceData['{errorClass}'] = '';
         if ($this->form->isInvalid()) {
-            $errorClass = $this->getConfigByKey('errorClass') ?? '';
+            $errorClass = $this->getConfig('errorClass') ?? '';
             $replaceData['{errorClass}'] = str_replace(array_keys($replaceData), array_values($replaceData), $errorClass);
         }
         // Replace the data
@@ -234,7 +218,7 @@ class Action implements ActionContract
      */
     public function getWrapper(): array
     {
-        $wrapper = $this->getConfigByKey('wrapper') ?? [];
+        $wrapper = $this->getConfig('wrapper') ?? [];
 
         // Replace the data
         $replaceData = $this->getReplaceData();
@@ -243,7 +227,7 @@ class Action implements ActionContract
         // Add error class
         $replaceData['{errorClass}'] = '';
         if ($this->form->isInvalid()) {
-            $errorClass = $this->getConfigByKey('errorClass') ?? '';
+            $errorClass = $this->getConfig('errorClass') ?? '';
             $replaceData['{errorClass}'] = str_replace(array_keys($replaceData), array_values($replaceData), $errorClass);
         }
         // Wrapper Builder
@@ -262,7 +246,7 @@ class Action implements ActionContract
     protected function getReplaceData()
     {
         // Replace the data
-        $replaceData = $this->getConfigByKey('replace') ?? [];
+        $replaceData = $this->getConfig('replace') ?? [];
         $replaceData['{formName}'] = $this->form->getName();
         $replaceData['{formId}'] = $this->form->getId();
         $replaceData['{formPrefix}'] = $this->form->getPrefix();
@@ -277,7 +261,7 @@ class Action implements ActionContract
      * @param string $group The configuration group to search within.
      * @return mixed The configuration value associated with the key, or null if not found.
      */
-    protected function getConfigByKey($key, $group = null)
+    public function getConfig($key, $group = null)
     {
         // Try to get the configuration directly from the 'action' array
         $keyConfig = Arr::get($this->action, $key, null);
@@ -286,7 +270,7 @@ class Action implements ActionContract
         }
 
         // If not found in 'buttons', heck type-specific configuration
-        $keyConfig = $this->getConfig('form.buttons.actionConfig.' . $key);
+        $keyConfig = $this->form->getConfig('form.buttons.actionConfig.' . $key);
 
         return $keyConfig;
     }

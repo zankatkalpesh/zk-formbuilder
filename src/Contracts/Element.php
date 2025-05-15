@@ -2,12 +2,21 @@
 
 namespace Zk\FormBuilder\Contracts;
 
-use Zk\FormBuilder\Contracts\Validation\Validator;
 use Zk\FormBuilder\Contracts\Label;
 use Zk\FormBuilder\Contracts\Error;
 
 interface Element
 {
+    /**
+     * Can element be used
+     */
+    public function can(): bool;
+
+    /**
+     * Element initialize 
+     */
+    public function init(): void;
+
     /**
      * Get Component
      * 
@@ -43,14 +52,6 @@ interface Element
      * @return array
      */
     public function getProperties(): array;
-
-    /**
-     * Get config
-     * 
-     * @param string $key optional 
-     * @return mixed
-     */
-    public function getConfig($key = null);
 
     /**
      * Get element type
@@ -234,12 +235,19 @@ interface Element
      */
     public function getMessages(): array;
 
-    /**
-     * Get Validator
-     *
-     * @return Validator
+    /** 
+     * Get parent element
+     * 
+     * @return Element | null
      */
-    public function getValidator();
+    public function getParent();
+
+    /** 
+     * Get form
+     * 
+     * @return Form
+     */
+    public function getForm();
 
     /**
      * Element data to validation format

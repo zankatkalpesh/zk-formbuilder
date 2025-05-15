@@ -16,15 +16,15 @@ class Buttons implements ButtonsContract
     use GeneralMethods;
 
     /**
-     * Component's name
-     * 
+     * Blade view component path.
+     *
      * @var string
      */
     public $component = 'formbuilder::buttons';
 
     /**
-     * Javascript Element
-     * 
+     * JavaScript handler/component name.
+     *
      * @var string
      */
     public $jsElement = 'ZkButtons';
@@ -47,12 +47,10 @@ class Buttons implements ButtonsContract
      * Return new Buttons instance
      *
      * @param Form $form
-     * @param string $configPath
      * @param WrapperBuilder $wrapperBuilder
      */
     public function __construct(
         protected $form,
-        public $configPath,
         protected WrapperBuilder $wrapperBuilder
     ) {
         $this->makeActions();
@@ -65,7 +63,7 @@ class Buttons implements ButtonsContract
      */
     protected function makeActions()
     {
-        $actions = $this->getConfigByKey('actions');
+        $actions = $this->getConfig('actions');
         if (!empty($actions)) {
             foreach ($actions as $name => $action) {
                 if (is_numeric($name)) {
@@ -74,7 +72,7 @@ class Buttons implements ButtonsContract
 
                 $action['name'] = ($this->form->getPrefix() ? $this->form->getPrefix() . '.' : '') . $name;
 
-                $this->actions[] = app()->makeWith(__NAMESPACE__ . '\\' . 'Action', ['action' => $action, 'form' => $this->form, 'configPath' => $this->configPath]);
+                $this->actions[] = app()->makeWith(__NAMESPACE__ . '\\' . 'Action', ['action' => $action, 'form' => $this->form]);
             }
         }
     }
@@ -86,7 +84,7 @@ class Buttons implements ButtonsContract
      */
     public function getComponent(): string
     {
-        return $this->getConfigByKey('component') ?? $this->component;
+        return $this->getConfig('component') ?? $this->component;
     }
 
     /**
@@ -96,7 +94,7 @@ class Buttons implements ButtonsContract
      */
     public function getJsElement(): string
     {
-        return $this->getConfigByKey('jsElement') ?? $this->jsElement;
+        return $this->getConfig('jsElement') ?? $this->jsElement;
     }
 
     /**
@@ -106,7 +104,7 @@ class Buttons implements ButtonsContract
      */
     public function getBefore()
     {
-        $before = $this->getConfigByKey('before') ?? '';
+        $before = $this->getConfig('before') ?? '';
 
         if (is_callable($before)) {
             $before = call_user_func($before, $this);
@@ -122,28 +120,13 @@ class Buttons implements ButtonsContract
      */
     public function getAfter()
     {
-        $after = $this->getConfigByKey('after') ?? '';
+        $after = $this->getConfig('after') ?? '';
 
         if (is_callable($after)) {
             $after = call_user_func($after, $this);
         }
 
         return $after;
-    }
-
-    /**
-     * Get config
-     * 
-     * @return mixed
-     */
-    public function getConfig($key = null)
-    {
-        $config = config($this->configPath);
-        if ($key) {
-            return Arr::get($config, $key);
-        }
-
-        return $config;
     }
 
     /**
@@ -154,7 +137,7 @@ class Buttons implements ButtonsContract
 
     public function getPosition(): string
     {
-        $position = $this->getConfigByKey('position');
+        $position = $this->getConfig('position');
 
         if (empty($position)) {
             $position = $this->position;
@@ -170,14 +153,14 @@ class Buttons implements ButtonsContract
      */
     public function getWrapper(): array
     {
-        $wrapper = $this->getConfigByKey('wrapper') ?? [];
+        $wrapper = $this->getConfig('wrapper') ?? [];
 
         // Replace the data
         $replaceData = $this->getReplaceData();
         // Add error class
         $replaceData['{errorClass}'] = '';
         if ($this->form->isInvalid()) {
-            $errorClass = $this->getConfigByKey('errorClass') ?? '';
+            $errorClass = $this->getConfig('errorClass') ?? '';
             $replaceData['{errorClass}'] = str_replace(array_keys($replaceData), array_values($replaceData), $errorClass);
         }
 
@@ -197,7 +180,7 @@ class Buttons implements ButtonsContract
     protected function getReplaceData()
     {
         // Replace the data
-        $replaceData = $this->getConfigByKey('replace') ?? [];
+        $replaceData = $this->getConfig('replace') ?? [];
         $replaceData['{formName}'] = $this->form->getName();
         $replaceData['{formId}'] = $this->form->getId();
         $replaceData['{formPrefix}'] = $this->form->getPrefix();
@@ -206,13 +189,13 @@ class Buttons implements ButtonsContract
     }
 
     /**
-     * Get action config by key
+     * Get buttons config by key
      * 
      * @param string $key The key to search for within the action configuration.
      * @param string $group The configuration group to search within.
      * @return mixed The configuration value associated with the key, or null if not found.
      */
-    protected function getConfigByKey($key, $group = null)
+    public function getConfig($key, $group = null)
     {
         // Try to get the configuration directly from the 'buttons' array
         $keyConfig = Arr::get($this->form->buttons, $key, null);
@@ -220,12 +203,12 @@ class Buttons implements ButtonsContract
             return $keyConfig;
         }
         // If not found in 'buttons', heck type-specific configuration
-        $keyConfig = $this->getConfig('form.buttons.' . $key);
+        $keyConfig = $this->form->getConfig('form.buttons.' . $key);
         if ($keyConfig !== null) {
             return $keyConfig;
         }
         // As a last resort, check general 'field.{$group?}.{key}' configuration
-        $keyConfig = $this->getConfig('form.buttons.' . ($group ? '.' . $group : '') . '.' . $key);
+        $keyConfig = $this->form->getConfig('form.buttons.' . ($group ? '.' . $group : '') . '.' . $key);
 
         return $keyConfig;
     }

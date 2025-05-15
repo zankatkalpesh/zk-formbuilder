@@ -7,15 +7,15 @@ namespace Zk\FormBuilder\Elements;
 class RadioElement extends Element
 {
     /**
-     * Element type
+     * Element type identifier.
      *
      * @var string
      */
     public $elementType = 'radio';
 
     /**
-     * Javascript Element
-     * 
+     * JavaScript handler/component name.
+     *
      * @var string
      */
     public $jsElement = 'ZkRadioElement';

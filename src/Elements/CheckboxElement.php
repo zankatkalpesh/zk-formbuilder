@@ -7,14 +7,14 @@ namespace Zk\FormBuilder\Elements;
 class CheckboxElement extends Element
 {
     /**
-     * Javascript Element
-     * 
+     * JavaScript handler/component name.
+     *
      * @var string
      */
     public $jsElement = 'ZkCheckboxElement';
 
     /**
-     * Element type
+     * Element type identifier.
      *
      * @var string
      */

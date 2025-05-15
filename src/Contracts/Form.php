@@ -19,6 +19,16 @@ interface Form
     public function getFields();
 
     /**
+     * Make Element 
+     * 
+     * @param array $field
+     * @param string $name
+     * @param Element | null $parent
+     * @return Element | null
+     */
+    public function makeElement($name, $field, $parent = null);
+
+    /**
      * Get property
      * 
      * @param string $key
@@ -33,20 +43,20 @@ interface Form
      */
     public function getProperties(): array;
 
-    /**
-     * Set properties
-     * 
-     * @param array $properties
-     * @return Form
-     */
-    // public function setProperties($properties);
-
     /** 
      * Get config path
      * 
      * @return string
      */
     public function getConfigPath(): string;
+
+    /**
+     * Get config
+     * 
+     * @param string $key optional 
+     * @return mixed
+     */
+    public function getConfig($key = null);
 
     /**
      * Has Form element view only
@@ -126,6 +136,13 @@ interface Form
      * @return string
      */
     public function getAction(): string;
+
+    /**
+     * Set form should have files
+     * 
+     * @param bool $hasFiles
+     */
+    public function setHasFiles($hasFiles);
 
     /**
      * Form should have files

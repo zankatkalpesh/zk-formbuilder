@@ -1,83 +1,3 @@
-export class ZkErrorElement {
-
-    constructor(error, formBuilder = null) {
-        this.error = error || null;
-        this.formBuilder = formBuilder;
-        this.context = document.createDocumentFragment();
-        this.init();
-    }
-
-    init() {
-        if (!this.error || !this.error.errors) return;
-
-        // Start Error Wrapper
-        // Before Error
-        const wrapper = this.formBuilder.createWrapperElement(this.error.wrapper || [], this.context);
-
-        // Create Error
-        for (let error of this.error.errors) {
-            const elm = document.createElement(this.error.tag || 'span');
-            // Set Attributes
-            this.formBuilder.setAttributesFromObject(elm, this.error.attributes);
-            // Before Error
-            elm.appendChild(this.formBuilder.stringToHTML(this.error.before || ''));
-            // Error Text
-            elm.appendChild(this.formBuilder.stringToHTML(error));
-            // After Error
-            elm.appendChild(this.formBuilder.stringToHTML(this.error.after || ''));
-
-            // Append Error to Context
-            wrapper.appendChild(elm);
-        }
-    }
-
-    position() {
-        return this.error?.position || 'after-input';
-    }
-
-    render(position = 'after-input') {
-        return (this.error && this.position() === position) ? this.context : '';
-    }
-}
-
-export class ZkLabelElement {
-
-    constructor(label, formBuilder = null) {
-        this.label = label || null;
-        this.formBuilder = formBuilder;
-        this.context = document.createDocumentFragment();
-        this.init();
-    }
-
-    init() {
-        if (!this.label) return;
-
-        // Start Label Wrapper
-        const wrapper = this.formBuilder.createWrapperElement(this.label.wrapper || [], this.context);
-        // Create Label
-        const elm = document.createElement(this.label.tag);
-        // Set Attributes
-        this.formBuilder.setAttributesFromObject(elm, this.label.attributes);
-        // Before Label
-        elm.appendChild(this.formBuilder.stringToHTML(this.label.before || ''));
-        // Label Text
-        elm.appendChild(document.createTextNode(this.label.text));
-        // After Label
-        elm.appendChild(this.formBuilder.stringToHTML(this.label.after || ''));
-        // Append Label to Context
-        wrapper.appendChild(elm);
-    }
-
-    position() {
-        return this.label?.position || 'before-input';
-    }
-
-    render(position = 'before-input') {
-        return (this.label && this.position() === position) ? this.context : '';
-    }
-
-}
-
 export class ZkElement {
 
     constructor(field, formBuilder = null) {
@@ -614,10 +534,88 @@ export class ZkAction {
     }
 }
 
+export class ZkError {
+
+    constructor(error, formBuilder = null) {
+        this.error = error || null;
+        this.formBuilder = formBuilder;
+        this.context = document.createDocumentFragment();
+        this.init();
+    }
+
+    init() {
+        if (!this.error || !this.error.errors) return;
+
+        // Start Error Wrapper
+        // Before Error
+        const wrapper = this.formBuilder.createWrapperElement(this.error.wrapper || [], this.context);
+
+        // Create Error
+        for (let error of this.error.errors) {
+            const elm = document.createElement(this.error.tag || 'span');
+            // Set Attributes
+            this.formBuilder.setAttributesFromObject(elm, this.error.attributes);
+            // Before Error
+            elm.appendChild(this.formBuilder.stringToHTML(this.error.before || ''));
+            // Error Text
+            elm.appendChild(this.formBuilder.stringToHTML(error));
+            // After Error
+            elm.appendChild(this.formBuilder.stringToHTML(this.error.after || ''));
+
+            // Append Error to Context
+            wrapper.appendChild(elm);
+        }
+    }
+
+    position() {
+        return this.error?.position || 'after-input';
+    }
+
+    render(position = 'after-input') {
+        return (this.error && this.position() === position) ? this.context : '';
+    }
+}
+
+export class ZkLabel {
+
+    constructor(label, formBuilder = null) {
+        this.label = label || null;
+        this.formBuilder = formBuilder;
+        this.context = document.createDocumentFragment();
+        this.init();
+    }
+
+    init() {
+        if (!this.label) return;
+
+        // Start Label Wrapper
+        const wrapper = this.formBuilder.createWrapperElement(this.label.wrapper || [], this.context);
+        // Create Label
+        const elm = document.createElement(this.label.tag);
+        // Set Attributes
+        this.formBuilder.setAttributesFromObject(elm, this.label.attributes);
+        // Before Label
+        elm.appendChild(this.formBuilder.stringToHTML(this.label.before || ''));
+        // Label Text
+        elm.appendChild(document.createTextNode(this.label.text));
+        // After Label
+        elm.appendChild(this.formBuilder.stringToHTML(this.label.after || ''));
+        // Append Label to Context
+        wrapper.appendChild(elm);
+    }
+
+    position() {
+        return this.label?.position || 'before-input';
+    }
+
+    render(position = 'before-input') {
+        return (this.label && this.position() === position) ? this.context : '';
+    }
+
+}
+
 export default class ZkFormBuilder {
 
-    static ZkErrorElement = ZkErrorElement;
-    static ZkLabelElement = ZkLabelElement;
     static ZkElement = ZkElement;
     static ZkFileElement = ZkFileElement;
     static ZkRadioElement = ZkRadioElement;
@@ -630,6 +628,8 @@ export default class ZkFormBuilder {
     static ZkTabElement = ZkTabElement;
     static ZkButtons = ZkButtons;
     static ZkAction = ZkAction;
+    static ZkError = ZkError;
+    static ZkLabel = ZkLabel;
 
     form = null;
     validator = null;

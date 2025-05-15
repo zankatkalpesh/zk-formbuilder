@@ -9,7 +9,6 @@ use Illuminate\Support\Arr;
 
 use Zk\FormBuilder\Traits\GeneralMethods;
 use Zk\FormBuilder\Helpers\WrapperBuilder;
-use Zk\FormBuilder\Elements\Factory;
 use Zk\FormBuilder\Validation\Validator;
 use Zk\FormBuilder\Database\Database;
 use Zk\FormBuilder\Contracts\Element;
@@ -258,14 +257,13 @@ class Form
 	 * Form constructor
 	 *
 	 * @param WrapperBuilder $wrapperBuilder
-	 * @param Factory $elementFactory
 	 * @param Validator $validator
 	 * @param Database $database
 	 * @param array $args
+	 * @param callable | null $callback
 	 */
 	public function __construct(
 		protected WrapperBuilder $wrapperBuilder,
-		protected Factory $elementFactory,
 		protected Validator $validator,
 		protected Database $database,
 		array $args = [],
@@ -291,9 +289,9 @@ class Form
 			app()->call([$this, 'init']);
 		}
 
-		$validator->setForm($this);
+		$this->validator->setForm($this);
 
-		$database->setForm($this);
+		$this->database->setForm($this);
 
 		$this->setFields();
 
@@ -333,16 +331,52 @@ class Form
 			}
 			$name = ($this->getPrefix() ? $this->getPrefix() . '.' : '') . $name;
 
-			$elements = $this->elementFactory->make(
-				$field,
-				$name,
-				$this,
-				$this->getProperties(),
-				$this->getConfigPath()
-			);
+			$element = $this->makeElement($name, $field, null);
 
-			$this->elements[] = $elements;
+			if ($element === null) continue;
+
+			$this->elements[] = $element;
 		}
+	}
+
+	public function makeElement($name, $field, $parent = null)
+	{
+		$field['name'] = $name;
+		$elementClass = $field['element'] ?? $this->getElementClass($field['type'] ?? 'text');
+
+		$element = app()->makeWith($elementClass, [
+			'field' => $field,
+			'form' => $this,
+			'parent' => $parent
+		]);
+
+		if (!$element->can()) {
+			return null;
+		}
+
+		// Element should be initialized
+		$element->init();
+
+		return $element;
+	}
+
+	/**
+	 * Returns element class name based on type and config.
+	 *
+	 * @param string $type
+	 * @return string
+	 */
+	protected function getElementClass(string $type): string
+	{
+		$elements = $this->getConfig('elements');
+
+		if (!empty($elements[$type])) return $elements[$type];
+
+		$className = __NAMESPACE__ . '\\Elements\\' . str_replace('-', '', ucwords($type, '-')) . 'Element';
+
+		return class_exists($className)
+			? $className
+			: __NAMESPACE__ . '\\Elements\\Element';
 	}
 
 	/**
@@ -438,7 +472,7 @@ class Form
 	 * @return array
 	 */
 
-	private function getConfig($key = null)
+	public function getConfig($key = null)
 	{
 		$configPath = $this->getConfigPath();
 
@@ -557,7 +591,7 @@ class Form
 		$this->buttons['position'] = $this->buttons['position'] ?? $this->getConfig('form.buttons.position');
 		$this->buttons['component'] = $this->buttons['component'] ?? $this->getConfig('form.buttons.component');
 
-		return app()->makeWith(__NAMESPACE__ . '\\Elements\\Buttons', ['form' => $this, 'configPath' => $this->getConfigPath()]);
+		return app()->makeWith(__NAMESPACE__ . '\\Elements\\Buttons', ['form' => $this]);
 	}
 
 	/**
@@ -634,6 +668,17 @@ class Form
 		$action = $this->action ?? $this->getConfig('form.action');
 
 		return ($action && Route::has($action)) ? route($action) : $action;
+	}
+
+	/**
+	 * Set form should have files
+	 *
+	 * @param bool $hasFiles
+	 * @return void
+	 */
+	public function setHasFiles($hasFiles)
+	{
+		$this->files = $hasFiles;
 	}
 
 	/**

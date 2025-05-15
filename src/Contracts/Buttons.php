@@ -35,10 +35,11 @@ interface Buttons
     /**
      * Get config
      * 
-     * @param string $key optional 
-     * @return mixed
+     * @param string $key The key to search for within the action configuration.
+     * @param string $group The configuration group to search within.
+     * @return mixed The configuration value associated with the key, or null if not found.
      */
-    public function getConfig($key = null);
+    public function getConfig($key, $group = null);
 
     /**
      * Get buttons position

@@ -4,36 +4,43 @@ declare(strict_types=1);
 
 namespace Zk\FormBuilder\Elements;
 
-use Illuminate\Support\Arr;
 use Zk\FormBuilder\Helpers\WrapperBuilder;
+use Zk\FormBuilder\Contracts\Element as ElementContract;
+use Zk\FormBuilder\Contracts\Form;
+use Illuminate\Support\Arr;
 
 class MultipleElement extends Element
 {
     /**
-     * Component's name
-     * 
+     * Blade view component path.
+     *
      * @var string
      */
     public $component = 'formbuilder::template.multiple';
 
+    /**
+     * Blade view component path.
+     *
+     * @var string
+     */
     public $actionComponent = 'formbuilder::template.multiple.action';
 
     /**
-     * Element type
+     * Element type identifier.
      *
      * @var string
      */
     public $elementType = 'multiple';
 
     /**
-     * Javascript Element
-     * 
+     * JavaScript handler/component name.
+     *
      * @var string
      */
     public $jsElement = 'ZkMultipleElement';
 
     /**
-     * Javascript Action Element
+     * Javascript action handler/component name.
      * 
      * @var string
      */
@@ -54,35 +61,51 @@ class MultipleElement extends Element
     protected $rows = [];
 
     /** 
-     * New row object
+     * Element row object
      * 
      * @var mixed
      */
-    protected $newRowObject;
+    protected $rowObject;
 
     /**
-     * Return new Element instance
+     * Element constructor.
      *
-     * @param array $field
-     * @param Element | Form $parent
-     * @param array $properties
-     * @param string $configPath
-     * @param Factory $elementFactory
-     * @param WrapperBuilder $wrapperBuilder
+     * Initializes the base state of the element, including its field data,
+     * parent reference, configuration path, and injected dependencies.
+     * Heavy logic like dynamic field setup should be handled in `init()`,
+     * which must be called explicitly after successful instantiation.
+     *
+     * @param array $field Raw field definition, including name, type, label, etc.
+     * @param Form $form
+     * @param ElementContract | null $parent The parent element or null containing this element.
+     * @param WrapperBuilder $wrapperBuilder Helper for rendering element wrappers.
      */
     public function __construct(
-        $field,
-        protected $parent,
-        $properties,
-        $configPath,
-        protected Factory $elementFactory,
+        array $field,
+        protected Form $form,
+        protected ElementContract | null $parent,
         protected WrapperBuilder $wrapperBuilder
     ) {
-        parent::__construct($field, $parent, $properties, $configPath, $elementFactory, $wrapperBuilder);
+        parent::__construct($field, $form, $parent, $wrapperBuilder);
+    }
 
+    /**
+     * Initialize the element's dynamic properties.
+     *
+     * This method should be called after the element is successfully constructed,
+     * allowing for conditional rendering and dependency resolution before setup.
+     *
+     * @return void
+     */
+    public function init(): void
+    {
+        parent::init();
+
+        // Min and max messages
         $this->field['minMsg'] = $this->field['minMsg'] ?? ($this->getMin() > 1 ? 'Minimum {min} rows are required' : 'At least one row is required.');
         $this->field['maxMsg'] = $this->field['maxMsg'] ?? 'Maximum {max} rows are allowed';
 
+        // Set replace data
         $this->setReplaceData([
             '{prefix}' => $this->getPrefix(),
             '{minRow}' => $this->getMin(),
@@ -91,6 +114,7 @@ class MultipleElement extends Element
             '{maxMsg}' => $this->field['maxMsg'],
         ]);
 
+        // Set rows
         $this->setRows();
     }
 
@@ -179,7 +203,7 @@ class MultipleElement extends Element
      */
     public function getActionComponent()
     {
-        return $this->getConfigByKey('action.component') ?? $this->actionComponent;
+        return $this->getConfig('action.component') ?? $this->actionComponent;
     }
 
     /**
@@ -189,7 +213,7 @@ class MultipleElement extends Element
      */
     public function getJsActionElement()
     {
-        return $this->getConfigByKey('action.jsElement') ?? $this->jsActionElement;
+        return $this->getConfig('action.jsElement') ?? $this->jsActionElement;
     }
 
     /** 
@@ -233,14 +257,9 @@ class MultipleElement extends Element
                 $name = $field['name'];
             }
             $name = $newName . '.' . $name;
-            // $field['name'] = $name;
-            $element = $this->elementFactory->make(
-                $field,
-                $name,
-                $this,
-                $this->getProperties(),
-                $this->configPath
-            );
+            // Make element
+            $element = $this->form->makeElement($name, $field, $this);
+            if ($element === null) continue;
 
             $row['fields'][] = $element;
         }
@@ -270,7 +289,7 @@ class MultipleElement extends Element
         // Row Wrapper Builder
         $wBuilder = clone $this->wrapperBuilder;
         $wBuilder->replace($replaceData);
-        $wrapper = $this->getConfigByKey($key) ?? [];
+        $wrapper = $this->getConfig($key) ?? [];
         // Add Error class to element
         $errorClass = $wrapper['errorClass'] ?? '';
         $errorClass = str_replace(array_keys($replaceData), array_values($replaceData), $errorClass);
@@ -283,7 +302,7 @@ class MultipleElement extends Element
         // Field Wrapper Builder
         $fwBuilder = clone $this->wrapperBuilder;
         $fwBuilder->replace($replaceData);
-        $fwrapper = $this->getConfigByKey('fieldWrapper') ?? [];
+        $fwrapper = $this->getConfig('fieldWrapper') ?? [];
         // Add Error class to element
         $fErrorClass = $fwrapper['errorClass'] ?? '';
         $fErrorClass = str_replace(array_keys($replaceData), array_values($replaceData), $fErrorClass);
@@ -468,15 +487,13 @@ class MultipleElement extends Element
      */
     public function isInvalid(): bool
     {
-        if ($this->validator === null) {
+        if (!$this->shouldValidate()) {
             return false;
         }
 
         foreach ($this->rows as $row) {
-            foreach ($row['fields'] as $field) {
-                if ($field->isInvalid()) {
-                    return true;
-                }
+            if ($this->isInvalidRow($row)) {
+                return true;
             }
         }
 
@@ -490,6 +507,10 @@ class MultipleElement extends Element
      */
     public function isInvalidRow($row)
     {
+        if (!$this->shouldValidate()) {
+            return false;
+        }
+
         foreach ($row['fields'] as $field) {
             if ($field->isInvalid()) {
                 return true;
@@ -541,7 +562,7 @@ class MultipleElement extends Element
      */
     public function getNewRowObject($side = 'frontend')
     {
-        if ($this->newRowObject) return $this->newRowObject;
+        if ($this->rowObject) return $this->rowObject;
 
         $row = $this->makeRowFields('{{index}}');
         // Set invalid row
@@ -553,9 +574,9 @@ class MultipleElement extends Element
         }
         $row['removeAction'] = $this->getRowRemoveAction($row);
         $row['jsElement'] = $this->getJsElement();
-        $this->newRowObject = $row;
+        $this->rowObject = $row;
 
-        return $this->newRowObject;
+        return $this->rowObject;
     }
 
     /**
@@ -648,7 +669,7 @@ class MultipleElement extends Element
 
     private function fetchAction($name = 'add')
     {
-        $action = $this->getConfigByKey('action.' . $name) ?? [];
+        $action = $this->getConfig('action.' . $name) ?? [];
         $defultKeys = [
             'show' => true,
             'tag' => 'button',
@@ -660,13 +681,13 @@ class MultipleElement extends Element
             'after' => '',
         ];
         foreach ($defultKeys as $key => $value) {
-            $action[$key] = $action[$key] ?? ($this->getConfigByKey('action.' . $name . '.' . $key) ?? $value);
+            $action[$key] = $action[$key] ?? ($this->getConfig('action.' . $name . '.' . $key) ?? $value);
         }
-        $action['before'] = $action['before'] ?? ($this->getConfigByKey('before') ?? '');
+        $action['before'] = $action['before'] ?? ($this->getConfig('before') ?? '');
         if (is_callable($action['before'])) {
             $action['before'] = call_user_func($action['before'], $this);
         }
-        $action['after'] = $action['after'] ?? ($this->getConfigByKey('after') ?? '');
+        $action['after'] = $action['after'] ?? ($this->getConfig('after') ?? '');
         if (is_callable($action['after'])) {
             $action['after'] = call_user_func($action['after'], $this);
         }
