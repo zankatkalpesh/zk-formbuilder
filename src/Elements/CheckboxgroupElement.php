@@ -121,7 +121,7 @@ class CheckboxgroupElement extends Element
         // Match values with items
         $data = array_values(array_filter(
             $data,
-            fn($value) => collect($this->getItems())->contains(fn($item) => !$item->hasViewOnly() && $item->getValue() == $value)
+            fn($value) => collect($this->getItems())->contains(fn($item) => $item->getValue() == $value)
         ));
 
         return !empty($data) ? $data : null;

@@ -128,7 +128,7 @@ class RadiogroupElement extends Element
 
         $data = Arr::get($this->data, $this->getNameKey(), null);
 
-        if ($data === null || !collect($this->getItems())->contains(fn($item) => !$item->hasViewOnly() && $item->getValue() == $data)) {
+        if ($data === null || !collect($this->getItems())->contains(fn($item) => $item->getValue() == $data)) {
             return null;
         }
 
